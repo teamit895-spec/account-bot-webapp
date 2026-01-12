@@ -680,8 +680,11 @@
         let accountsData = {};
         let isAdmin = false;
 
-        // Demo data (will be replaced with API calls)
-        const demoData = {
+        // API configuration
+        const API_BASE_URL = window.API_BASE_URL || '/api';
+        
+        // Fallback demo data (used when API is unavailable)
+        const fallbackData = {
             google: 15,
             kling: 8,
             telegram: 23,
@@ -696,9 +699,34 @@
             checkAdmin();
         }
 
-        function loadAccounts() {
-            // In real app, this would be an API call
-            accountsData = demoData;
+        // Fetch accounts data from API
+        async function fetchAccountsFromAPI() {
+            const response = await fetch(`${API_BASE_URL}/accounts`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Telegram-Init-Data': tg.initData || ''
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+            }
+            
+            return await response.json();
+        }
+
+        async function loadAccounts() {
+            try {
+                // Fetch accounts data from API
+                const data = await fetchAccountsFromAPI();
+                accountsData = data.accounts || data;
+                console.log('Accounts loaded from API');
+            } catch (error) {
+                console.warn('Failed to load from API, using fallback data:', error.message);
+                accountsData = fallbackData;
+            }
+            
             renderAccounts();
             updateStats();
             checkWarnings();
@@ -810,11 +838,8 @@
             // Show loading
             showToast('Получение аккаунта...', '');
 
-            // Simulate API call
-            await new Promise(r => setTimeout(r, 1000));
-
-            // Demo account data
-            const demoAccounts = {
+            // Fallback demo account data (used when API is unavailable)
+            const fallbackAccounts = {
                 google: 'demo.user@gmail.com:SecurePass123!',
                 kling: 'kling_user:KlingAI#2024',
                 telegram: '+79001234567:session_abc123',
@@ -823,8 +848,33 @@
                 instagram: 'insta_user:InstaPass321'
             };
 
-            currentAccount = demoAccounts[type];
-            accountsData[type] = Math.max(0, accountsData[type] - 1);
+            try {
+                // Request account from API
+                const response = await fetch(`${API_BASE_URL}/accounts/${type}/issue`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Telegram-Init-Data': tg.initData || ''
+                    },
+                    body: JSON.stringify({
+                        userId: tg.initDataUnsafe?.user?.id,
+                        username: tg.initDataUnsafe?.user?.username
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                currentAccount = data.credentials || data.account;
+                accountsData[type] = Math.max(0, (data.remaining !== undefined ? data.remaining : accountsData[type] - 1));
+                console.log('Account issued via API');
+            } catch (error) {
+                console.warn('Failed to get account from API, using fallback:', error.message);
+                currentAccount = fallbackAccounts[type];
+                accountsData[type] = Math.max(0, accountsData[type] - 1);
+            }
 
             // Copy to clipboard
             try {
