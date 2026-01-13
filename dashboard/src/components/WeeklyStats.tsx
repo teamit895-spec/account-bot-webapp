@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { WeeklyStats, GroupData, cleanGroupName } from '@/types';
+import { WeeklyStats as WeeklyStatsType, WeeklyGroup, GroupData, cleanGroupName } from '@/types';
 import { fetchWeeklyStats } from '@/lib/api';
 import GroupCard from './GroupCard';
 
@@ -12,7 +12,7 @@ interface WeeklyStatsViewProps {
 }
 
 export default function WeeklyStatsView({ groups, onRefreshCache, refreshing }: WeeklyStatsViewProps) {
-  const [weeklyData, setWeeklyData] = useState<WeeklyStats | null>(null);
+  const [weeklyData, setWeeklyData] = useState<WeeklyStatsType | null>(null);
   const [loading, setLoading] = useState(false);
 
   const loadWeeklyData = useCallback(async (force = false) => {
@@ -32,101 +32,128 @@ export default function WeeklyStatsView({ groups, onRefreshCache, refreshing }: 
   }, []);
 
   const getPercentClass = (pct: number) => {
-    if (pct <= 12) return 'good';
-    if (pct <= 20) return 'warning';
+    if (pct <= 3) return 'excellent';
+    if (pct <= 5) return 'good';
+    if (pct <= 7) return 'warning';
     return 'bad';
   };
 
-  const getRankClass = (rank: number) => {
-    if (rank === 1) return 'gold';
-    if (rank === 2) return 'silver';
-    if (rank === 3) return 'bronze';
-    return '';
+  const getMedal = (rank: number) => {
+    if (rank === 1) return '🏆';
+    if (rank === 2) return '🥈';
+    if (rank === 3) return '🥉';
+    return null;
   };
 
-  const medals = ['🥇', '🥈', '🥉'];
-  const filteredGroups = (weeklyData?.группы || []).filter(
-    гр => гр.дней_с_данными > 0 && гр.средний_процент >= 0.1
-  );
+  const filteredGroups = (weeklyData?.группы || [])
+    .filter(гр => гр.дней_с_данными > 0)
+    .sort((a, b) => a.средний_процент - b.средний_процент);
+
+  const maxPercent = Math.max(...filteredGroups.map(g => g.средний_процент), 10);
 
   return (
-    <>
-      {loading ? (
-        <div className="weekly-stats-container">
-          <div className="weekly-stats-header">
-            <div className="weekly-stats-title"><span>📊</span> Средний % вылетов за неделю</div>
+    <div className="groups-page">
+      {/* Weekly Stats Table */}
+      <div className="weekly-container">
+        <div className="weekly-header">
+          <div className="weekly-title">
+            <span className="weekly-icon">📊</span>
+            Средний % вылетов за неделю
           </div>
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-            <div className="loading-spinner" style={{ margin: '0 auto 10px' }} />
+          {weeklyData?.период && (
+            <div className="weekly-period">{weeklyData.период}</div>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="weekly-loading">
+            <div className="loading-spinner" />
             <p>Загрузка статистики...</p>
           </div>
-        </div>
-      ) : weeklyData && filteredGroups.length > 0 ? (
-        <div className="weekly-stats-container">
-          <div className="weekly-stats-header">
-            <div className="weekly-stats-title"><span>📊</span> Средний % вылетов за неделю</div>
-            <div className="weekly-stats-period">{weeklyData.период || ''}</div>
+        ) : filteredGroups.length === 0 ? (
+          <div className="weekly-empty">
+            <p>🔭 Нет данных за эту неделю</p>
           </div>
-          <table className="weekly-table">
+        ) : (
+          <table className="weekly-table-v2">
             <thead>
               <tr>
                 <th style={{ width: '50px' }}>#</th>
-                <th>Группа</th>
-                <th style={{ width: '100px' }}>Средний %</th>
-                <th style={{ width: '140px' }}>Прогресс</th>
-                <th style={{ width: '80px' }}>Дней</th>
+                <th>ГРУППА</th>
+                <th style={{ width: '100px', textAlign: 'right' }}>СРЕДНИЙ %</th>
+                <th style={{ width: '200px' }}>ПРОГРЕСС</th>
+                <th style={{ width: '80px', textAlign: 'right' }}>ДНЕЙ</th>
               </tr>
             </thead>
             <tbody>
-              {filteredGroups.map((гр, idx) => {
+              {filteredGroups.map((group, idx) => {
                 const rank = idx + 1;
-                const pctClass = getPercentClass(гр.средний_процент);
-                const rankClass = getRankClass(rank);
-                const barWidth = Math.min(100, (гр.средний_процент / 30) * 100);
-                const medal = rank <= 3 ? medals[rank - 1] + ' ' : '';
+                const medal = getMedal(rank);
+                const pctClass = getPercentClass(group.средний_процент);
+                const barWidth = (group.средний_процент / maxPercent) * 100;
+
                 return (
-                  <tr key={гр.имя}>
-                    <td><div className={`weekly-rank ${rankClass}`}>{rank}</div></td>
-                    <td className="weekly-name">{medal}{cleanGroupName(гр.имя)}</td>
-                    <td><span className={`weekly-percent ${pctClass}`}>{гр.средний_процент}%</span></td>
-                    <td><div className="weekly-bar"><div className={`weekly-bar-fill ${pctClass}`} style={{ width: `${barWidth}%` }} /></div></td>
-                    <td className="weekly-days">{гр.дней_с_данными} из {weeklyData.текущий_день || 7}</td>
+                  <tr key={group.имя}>
+                    <td>
+                      <div className={`rank-badge ${rank <= 3 ? `rank-${rank}` : ''}`}>
+                        {medal || rank}
+                      </div>
+                    </td>
+                    <td className="group-name-cell">
+                      {medal && <span className="medal-icon">{medal}</span>}
+                      {cleanGroupName(group.имя)}
+                    </td>
+                    <td className="percent-cell">
+                      <span className={`percent-value ${pctClass}`}>
+                        {group.средний_процент.toFixed(2)}%
+                      </span>
+                    </td>
+                    <td>
+                      <div className="progress-bar-container">
+                        <div 
+                          className={`progress-bar-fill ${pctClass}`}
+                          style={{ width: `${Math.min(barWidth, 100)}%` }}
+                        />
+                      </div>
+                    </td>
+                    <td className="days-cell">
+                      {group.дней_с_данными} из {weeklyData?.текущий_день || 7}
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-        </div>
-      ) : weeklyData ? (
-        <div className="weekly-stats-container">
-          <div className="weekly-stats-header">
-            <div className="weekly-stats-title"><span>📊</span> Средний % вылетов за неделю</div>
-            <div className="weekly-stats-period">{weeklyData.период || ''}</div>
-          </div>
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-            <p>🔭 Нет данных за эту неделю</p>
-          </div>
-        </div>
-      ) : null}
+        )}
+      </div>
 
-      <div className="section">
-        <div className="section-header">
-          <h2 className="section-title">📋 Все группы</h2>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button className="btn" onClick={() => loadWeeklyData(true)} disabled={loading}>
-              {loading ? <span className="spinner" /> : '🔄'} Обновить рейтинг
+      {/* All Groups Section */}
+      <div className="all-groups-section">
+        <div className="all-groups-header">
+          <div className="all-groups-title">
+            <span>👥</span> Все группы
+          </div>
+          <div className="all-groups-actions">
+            <button 
+              className="action-btn" 
+              onClick={() => loadWeeklyData(true)} 
+              disabled={loading}
+            >
+              {loading ? <span className="spinner" /> : '📊'} Обновить рейтинг
             </button>
-            <button className="btn btn-primary" onClick={onRefreshCache} disabled={refreshing}>
+            <button 
+              className="action-btn primary" 
+              onClick={onRefreshCache} 
+              disabled={refreshing}
+            >
               {refreshing ? <span className="spinner" /> : '🔄'} Обновить кеш
             </button>
           </div>
         </div>
-        <div className="section-content">
-          <div className="groups-grid">
-            {groups.map(gr => <GroupCard key={gr.имя} group={gr} />)}
-          </div>
+        <div className="groups-grid-v2">
+          {groups.map(gr => <GroupCard key={gr.имя} group={gr} />)}
         </div>
       </div>
-    </>
+    </div>
   );
 }

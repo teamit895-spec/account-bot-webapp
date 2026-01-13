@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { PersonalStatsResponse, PersonalUser, GroupData, cleanGroupName, PersonalTypeFilter, DAYS_SHORT } from '@/types';
+import { PersonalStatsResponse, PersonalUser, GroupData, cleanGroupName, PersonalTypeFilter, DAYS_SHORT, ROOMS } from '@/types';
 import { fetchPersonalStats } from '@/lib/api';
 
 interface PersonalStatsProps {
@@ -11,6 +11,7 @@ interface PersonalStatsProps {
 export default function PersonalStats({ groups }: PersonalStatsProps) {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<PersonalStatsResponse | null>(null);
   const [typeFilter, setTypeFilter] = useState<PersonalTypeFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -18,13 +19,16 @@ export default function PersonalStats({ groups }: PersonalStatsProps) {
 
   const loadPersonalStats = useCallback(async (teamName: string) => {
     setLoading(true);
+    setError(null);
     setSelectedTeam(teamName);
     setExpandedCards(new Set());
+    
     try {
       const result = await fetchPersonalStats(teamName);
       setData(result);
-    } catch (error) {
-      console.error('Personal stats error:', error);
+    } catch (err) {
+      console.error('Personal stats error:', err);
+      setError('Не удалось загрузить данные');
       setData(null);
     }
     setLoading(false);
@@ -39,6 +43,12 @@ export default function PersonalStats({ groups }: PersonalStatsProps) {
     });
   };
 
+  // Get teams from ROOMS constant
+  const teams = ROOMS.map(room => ({
+    name: room.name,
+    short: room.short
+  }));
+
   let filteredUsers = data?.users || [];
   if (typeFilter !== 'all') {
     filteredUsers = filteredUsers.filter(u => {
@@ -52,117 +62,163 @@ export default function PersonalStats({ groups }: PersonalStatsProps) {
     filteredUsers = filteredUsers.filter(u => u.name.toLowerCase().includes(search));
   }
 
-  const teams = groups.map(gr => ({
-    name: gr.имя,
-    cleanName: cleanGroupName(gr.имя),
-    count: gr.юзеров || 0
-  }));
-
   return (
-    <div>
-      <div className="team-buttons">
+    <div className="personal-page">
+      {/* Team Buttons */}
+      <div className="team-buttons-grid">
         {teams.map(t => (
           <button
-            key={t.name}
-            className={`team-btn ${selectedTeam === t.name ? 'active' : ''}`}
+            key={t.short}
+            className={`team-btn-v2 ${selectedTeam === t.name ? 'active' : ''}`}
             onClick={() => loadPersonalStats(t.name)}
           >
-            {t.cleanName}
-            <span className="team-count">{t.count}</span>
+            {t.name}
           </button>
         ))}
       </div>
 
+      {/* Content */}
       {loading ? (
-        <div className="no-data-message">
-          <div className="loading-spinner" style={{ margin: '0 auto 16px' }} />
+        <div className="personal-loading">
+          <div className="loading-spinner" />
           <p>Загрузка личной статистики...</p>
         </div>
+      ) : error ? (
+        <div className="personal-error">
+          <p className="error-text">{error}</p>
+          <button 
+            className="action-btn primary"
+            onClick={() => selectedTeam && loadPersonalStats(selectedTeam)}
+          >
+            Повторить
+          </button>
+        </div>
       ) : !selectedTeam ? (
-        <div className="no-data-message">
+        <div className="personal-empty">
           <div className="icon">👆</div>
           <h3>Выберите команду</h3>
           <p>Нажмите на кнопку команды выше для просмотра личной статистики</p>
         </div>
-      ) : filteredUsers.length === 0 ? (
-        <div className="no-data-message">
+      ) : filteredUsers.length === 0 && data ? (
+        <div className="personal-empty">
           <div className="icon">🔍</div>
           <h3>Нет данных</h3>
           <p>Не найдено пользователей по заданным критериям</p>
         </div>
-      ) : (
+      ) : data ? (
         <>
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Filters */}
+          <div className="personal-filters-row">
             <input
               type="text"
               placeholder="🔍 Поиск по имени..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ flex: 1, minWidth: '200px', padding: '10px 16px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', borderRadius: '10px', color: 'var(--text-primary)', fontSize: '0.875rem' }}
+              className="search-input-v2"
             />
-            <button className={`filter-btn ${typeFilter === 'all' ? 'active' : ''}`} onClick={() => setTypeFilter('all')}>Все</button>
-            <button className={`filter-btn ru ${typeFilter === 'ру' ? 'active' : ''}`} onClick={() => setTypeFilter('ру')}>🇷🇺 РУ</button>
-            <button className={`filter-btn uzb ${typeFilter === 'узб' ? 'active' : ''}`} onClick={() => setTypeFilter('узб')}>🇺🇿 УЗБ</button>
+            <div className="filter-buttons">
+              <button 
+                className={`filter-btn-v2 ${typeFilter === 'all' ? 'active' : ''}`}
+                onClick={() => setTypeFilter('all')}
+              >
+                Все
+              </button>
+              <button 
+                className={`filter-btn-v2 ru ${typeFilter === 'ру' ? 'active' : ''}`}
+                onClick={() => setTypeFilter('ру')}
+              >
+                🇷🇺 РУ
+              </button>
+              <button 
+                className={`filter-btn-v2 uz ${typeFilter === 'узб' ? 'active' : ''}`}
+                onClick={() => setTypeFilter('узб')}
+              >
+                🇺🇿 УЗБ
+              </button>
+            </div>
           </div>
-          <div className="users-grid">
+
+          {/* Users */}
+          <div className="personal-users-grid">
             {filteredUsers.map(user => (
-              <UserCard key={user.name + user.row} user={user} expanded={expandedCards.has(user.name)} onToggle={() => toggleCard(user.name)} />
+              <UserCard 
+                key={user.name + user.row} 
+                user={user} 
+                expanded={expandedCards.has(user.name)} 
+                onToggle={() => toggleCard(user.name)} 
+              />
             ))}
           </div>
         </>
-      )}
+      ) : null}
     </div>
   );
 }
 
 function UserCard({ user, expanded, onToggle }: { user: PersonalUser; expanded: boolean; onToggle: () => void }) {
-  const typeClass = user.type === 'узб' ? 'uzb' : 'ru';
+  const typeClass = user.type === 'узб' ? 'uz' : user.type === 'ру+узб' ? 'ru-uz' : 'ru';
   const typeLabel = user.type === 'узб' ? 'УЗБ' : user.type === 'ру+узб' ? 'РУ+УЗБ' : 'РУ';
   const { took, lost, left, percent } = user.weekly;
   const DAYS = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
 
   return (
-    <div className={`user-card ${typeClass}${expanded ? ' expanded' : ''}`}>
-      <div className="user-card-header" onClick={onToggle}>
-        <div className="user-name">
-          {user.name}
-          <span className="user-type-badge">{typeLabel}</span>
+    <div className={`personal-user-card ${typeClass} ${expanded ? 'expanded' : ''}`}>
+      <div className="personal-user-header" onClick={onToggle}>
+        <div className="personal-user-info">
+          <span className="personal-user-name">{user.name}</span>
+          <span className={`personal-user-type ${typeClass}`}>{typeLabel}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span className="user-row-badge">#{user.row}</span>
-          <span className="expand-icon">▼</span>
+        <div className="personal-user-right">
+          <span className="personal-user-row">#{user.row}</span>
+          <span className="expand-icon">{expanded ? '▲' : '▼'}</span>
         </div>
       </div>
-      <div className="user-card-summary">
-        <div className="summary-item took"><div className="summary-item-label">Взял ТГ</div><div className="summary-item-value">{took}</div></div>
-        <div className="summary-item lost"><div className="summary-item-label">Слётов</div><div className="summary-item-value">{lost}</div></div>
-        <div className="summary-item left"><div className="summary-item-label">Осталось</div><div className="summary-item-value">{left}</div></div>
-        <div className="summary-item percent"><div className="summary-item-label">% слётов</div><div className="summary-item-value">{percent}%</div></div>
+      
+      <div className="personal-user-summary">
+        <div className="summary-item took">
+          <div className="label">Взял ТГ</div>
+          <div className="value">{took}</div>
+        </div>
+        <div className="summary-item lost">
+          <div className="label">Слётов</div>
+          <div className="value">{lost}</div>
+        </div>
+        <div className="summary-item left">
+          <div className="label">Осталось</div>
+          <div className="value">{left}</div>
+        </div>
+        <div className="summary-item percent">
+          <div className="label">% слётов</div>
+          <div className="value">{percent}%</div>
+        </div>
       </div>
-      <div className="user-card-details">
-        <div className="days-breakdown">
-          {DAYS.map((day, i) => {
-            const dd = user.days[day];
-            if (!dd || dd.took <= 0) return null;
-            return (
-              <div key={day} className="day-row">
-                <div className="day-name">{DAYS_SHORT[i]}</div>
-                <div className="day-formula">
-                  Взял <span className="took">{dd.took}</span> - вылетело <span className="lost">{dd.lost}</span> = осталось <span className="left">{dd.left}</span>
+
+      {expanded && (
+        <div className="personal-user-details">
+          <div className="days-list">
+            {DAYS.map((day, i) => {
+              const dd = user.days[day];
+              if (!dd || dd.took <= 0) return null;
+              return (
+                <div key={day} className="day-item">
+                  <span className="day-label">{DAYS_SHORT[i]}</span>
+                  <span className="day-formula">
+                    Взял <span className="took">{dd.took}</span> - вылетело <span className="lost">{dd.lost}</span> = осталось <span className="left">{dd.left}</span>
+                  </span>
                 </div>
+              );
+            })}
+            {took > 0 && (
+              <div className="day-item total">
+                <span className="day-label">ИТОГО</span>
+                <span className="day-formula">
+                  Взял <span className="took">{took}</span> - вылетело <span className="lost">{lost}</span> = осталось <span className="left">{left}</span>
+                </span>
               </div>
-            );
-          })}
-          {took > 0 && (
-            <div className="day-row total-row">
-              <div className="day-name">ИТОГО</div>
-              <div className="day-formula">
-                Взял <span className="took">{took}</span> - вылетело <span className="lost">{lost}</span> = осталось <span className="left">{left}</span>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

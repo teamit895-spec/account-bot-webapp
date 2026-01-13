@@ -20,8 +20,8 @@ const tabs: { key: TabType; label: string; icon: string }[] = [
   { key: 'rooms', label: 'Комнаты', icon: '🏠' },
   { key: 'groups', label: 'Группы', icon: '👥' },
   { key: 'personal', label: 'Личная статистика', icon: '👤' },
-  { key: 'recordings', label: 'Записи работы', icon: '📹' },
-  { key: 'stats', label: 'Статистика', icon: '📈' },
+  { key: 'recordings', label: 'Записи', icon: '📹' },
+  { key: 'stats', label: 'Статистика бота', icon: '📈' },
   { key: 'settings', label: 'Настройки', icon: '⚙️' },
 ];
 
@@ -46,14 +46,18 @@ export default function Sidebar({
         onClick={onClose}
       />
 
-      <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+      <aside className={`sidebar ${isOpen ? 'open' : ''} ${collapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-header">
           <div className="logo">
-            <div className="logo-icon">📊</div>
-            <div className="logo-text">
-              <span className="logo-title">Stats Bot</span>
-              <span className="logo-sub">v2.0 Dashboard</span>
+            <div className="logo-icon">
+              <span>📊</span>
             </div>
+            {!collapsed && (
+              <div className="logo-text">
+                <span className="logo-title">Статистика</span>
+                <span className="logo-subtitle">слётов</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -63,34 +67,36 @@ export default function Sidebar({
               key={key}
               className={`nav-item ${activeTab === key ? 'active' : ''}`}
               onClick={() => handleTabClick(key)}
+              title={collapsed ? label : undefined}
             >
-              <span>{icon}</span>
-              <span>{label}</span>
+              <span className="nav-icon">{icon}</span>
+              {!collapsed && <span className="nav-label">{label}</span>}
             </button>
           ))}
         </nav>
 
-        <div className="sidebar-collapse">
-          <button className="collapse-btn" onClick={() => setCollapsed(!collapsed)}>
+        <div className="sidebar-footer">
+          <button 
+            className="collapse-btn"
+            onClick={() => setCollapsed(!collapsed)}
+          >
             {collapsed ? '→' : '←'}
           </button>
         </div>
 
         <div className="status-box">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+          <div className="status-header">
             <span className={`status-dot ${status.online ? 'online' : ''}`} />
-            <span style={{
-              fontWeight: 600,
-              fontSize: '0.75rem',
-              color: status.online ? 'var(--success)' : 'var(--error)'
-            }}>
+            <span className="status-label">
               {status.online ? 'Онлайн' : 'Офлайн'}
             </span>
           </div>
-          <div className="status-meta">
-            Аптайм: {status.uptime}<br />
-            Групп: {status.groupsCount}
-          </div>
+          {!collapsed && (
+            <div className="status-details">
+              <div>Аптайм: {status.uptime}</div>
+              <div>Групп: {status.groupsCount}</div>
+            </div>
+          )}
         </div>
       </aside>
     </>

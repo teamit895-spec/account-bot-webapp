@@ -6,20 +6,20 @@ interface GroupCardProps {
   group: GroupData;
 }
 
-function getStatusInfo(status: string): { className: string; badge: string; text: string } {
+function getStatusInfo(status: string): { badge: string; text: string } {
   switch (status) {
     case 'ok':
-      return { className: '', badge: 'badge-success', text: 'OK' };
+      return { badge: 'ok', text: 'OK' };
     case 'timeout':
-      return { className: 'status-warning', badge: 'badge-warning', text: 'Таймаут' };
+      return { badge: 'warning', text: 'Таймаут' };
     case 'error':
-      return { className: 'status-error', badge: 'badge-error', text: 'Ошибка' };
+      return { badge: 'error', text: 'Ошибка' };
     case 'no_chat':
-      return { className: 'status-warning', badge: 'badge-warning', text: 'Нет чата' };
+      return { badge: 'warning', text: 'Нет чата' };
     case 'cached':
-      return { className: 'status-cached', badge: 'badge-cached', text: 'Из кеша' };
+      return { badge: 'cached', text: 'Кеш' };
     default:
-      return { className: 'status-warning', badge: 'badge-warning', text: '—' };
+      return { badge: 'warning', text: '—' };
   }
 }
 
@@ -30,80 +30,78 @@ export default function GroupCard({ group }: GroupCardProps) {
 
   const закупки_день = group.закупки_тг || { ру: 0, узб: 0 };
   const закупки_неделя = group.закупки_тг_неделя || { ру: 0, узб: 0 };
-  const всего_день = (закупки_день.ру ?? 0) + (закупки_день.узб ?? 0);
-  const всего_неделя = (закупки_неделя.ру ?? 0) + (закупки_неделя.узб ?? 0);
 
   return (
-    <div className={`group-card ${statusInfo.className}`}>
-      <div className="group-header">
-        <span className="group-name">{cleanGroupName(group.имя)}</span>
-        <span className={`badge ${statusInfo.badge}`}>{statusInfo.text}</span>
+    <div className="group-card-v2">
+      <div className="group-card-header">
+        <span className="group-card-name">{cleanGroupName(group.имя)}</span>
+        <span className={`status-badge ${statusInfo.badge}`}>{statusInfo.text}</span>
       </div>
 
-      <table className="group-summary">
+      <table className="group-stats-table">
         <thead>
           <tr>
             <th></th>
-            <th title="Людей в команде">Люди</th>
-            <th title="Взяли Telegram в работу">ТГ</th>
-            <th title="Тень - исчез">Тень</th>
-            <th title="Мороз - заморозили">Мороз</th>
-            <th title="Вылет - забанили">Вылет</th>
-            <th title="Всего слётов">Всего</th>
-            <th title="Процент слётов">%</th>
+            <th>ЛЮДИ</th>
+            <th className="col-shadow">ТЕНЬ</th>
+            <th className="col-frost">МОРОЗ</th>
+            <th className="col-flight">ВЫЛЕТ</th>
+            <th>ВСЕГО</th>
+            <th>%</th>
           </tr>
         </thead>
         <tbody>
-          <tr className="ru">
-            <td>🇷🇺</td>
+          <tr className="row-ru">
+            <td className="type-label">RU</td>
             <td>{ру.людей ?? 0}</td>
-            <td>{ру.взяли_тг ?? 0}</td>
-            <td>{ру.тень ?? 0}</td>
-            <td>{ру.мороз ?? 0}</td>
-            <td>{ру.вылет ?? 0}</td>
+            <td className="col-shadow">{ру.тень ?? 0}</td>
+            <td className="col-frost">{ру.мороз ?? 0}</td>
+            <td className="col-flight">{ру.вылет ?? 0}</td>
             <td>{ру.всего ?? 0}</td>
-            <td className="pct">{ру.процент ?? 0}%</td>
+            <td><span className="pct-badge ru">{ру.процент ?? 0}%</span></td>
           </tr>
-          <tr className="uzb">
-            <td>🇺🇿</td>
+          <tr className="row-uz">
+            <td className="type-label">UZ</td>
             <td>{узб.людей ?? 0}</td>
-            <td>{узб.взяли_тг ?? 0}</td>
-            <td>{узб.тень ?? 0}</td>
-            <td>{узб.мороз ?? 0}</td>
-            <td>{узб.вылет ?? 0}</td>
+            <td className="col-shadow">{узб.тень ?? 0}</td>
+            <td className="col-frost">{узб.мороз ?? 0}</td>
+            <td className="col-flight">{узб.вылет ?? 0}</td>
             <td>{узб.всего ?? 0}</td>
-            <td className="pct">{узб.процент ?? 0}%</td>
+            <td><span className="pct-badge uz">{узб.процент ?? 0}%</span></td>
           </tr>
-          <tr className="total">
-            <td>📊</td>
+          <tr className="row-total">
+            <td className="type-label">Σ</td>
             <td>{group.юзеров ?? 0}</td>
-            <td>{group.взяли_тг ?? 0}</td>
-            <td>{group.тень ?? 0}</td>
-            <td>{group.мороз ?? 0}</td>
-            <td>{group.вылет ?? 0}</td>
+            <td className="col-shadow">{group.тень ?? 0}</td>
+            <td className="col-frost">{group.мороз ?? 0}</td>
+            <td className="col-flight">{group.вылет ?? 0}</td>
             <td>{group.всего_слётов ?? 0}</td>
-            <td className="pct">{group.процент ?? 0}%</td>
+            <td><span className="pct-badge total">{group.процент ?? 0}%</span></td>
           </tr>
         </tbody>
       </table>
 
-      {/* Закупки ТГ - день */}
-      <div className="tg-purchase-row day">
-        <div className="purchase-label">📦 Загружено новых сегодня</div>
-        <div className="purchase-values">
-          <span className="purchase-ru">🇷🇺 {закупки_день.ру ?? 0}</span>
-          <span className="purchase-uzb">🇺🇿 {закупки_день.узб ?? 0}</span>
-          <span className="purchase-total">{всего_день}</span>
+      <div className="group-purchases">
+        <div className="purchase-line">
+          <span className="purchase-icon">📦</span>
+          <span className="purchase-text">Закуплено сегодня</span>
+          <span className="purchase-vals">
+            <span className="ru">ру {закупки_день.ру ?? 0}</span>
+            <span className="sep">|</span>
+            <span className="uz">уз {закупки_день.узб ?? 0}</span>
+          </span>
         </div>
-      </div>
-
-      {/* Закупки ТГ - неделя */}
-      <div className="tg-purchase-row week">
-        <div className="purchase-label">📦 За неделю</div>
-        <div className="purchase-values">
-          <span className="purchase-ru">🇷🇺 {закупки_неделя.ру ?? 0}</span>
-          <span className="purchase-uzb">🇺🇿 {закупки_неделя.узб ?? 0}</span>
-          <span className="purchase-total">{всего_неделя}</span>
+        <div className="purchase-line">
+          <span className="purchase-icon">📊</span>
+          <span className="purchase-text">За неделю</span>
+          <span className="purchase-vals">
+            <span className="ru">ру {закупки_неделя.ру ?? 0}</span>
+            <span className="sep">|</span>
+            <span className="uz">уз {закупки_неделя.узб ?? 0}</span>
+            {(закупки_неделя.ру || закупки_неделя.узб) ? (
+              <span className="total">{(закупки_неделя.ру ?? 0) + (закупки_неделя.узб ?? 0)}</span>
+            ) : null}
+          </span>
         </div>
       </div>
     </div>
