@@ -5,7 +5,6 @@ import clsx from 'clsx';
 
 interface GroupCardProps {
   group: GroupData;
-  compact?: boolean;
 }
 
 function getPercentClass(percent: number) {
@@ -23,12 +22,20 @@ function getStatusBadge(status: string) {
   }
 }
 
-export default function GroupCard({ group, compact }: GroupCardProps) {
-  const pc = getPercentClass(group.процент);
-  const status = getStatusBadge(group.статус);
+export default function GroupCard({ group }: GroupCardProps) {
+  const pc = getPercentClass(group.процент ?? 0);
+  const status = getStatusBadge(group.статус || 'ok');
   
-  const dayPurchases = (group.закупки_тг?.ру || 0) + (group.закупки_тг?.узб || 0);
-  const weekPurchases = (group.закупки_тг_неделя?.ру || 0) + (group.закупки_тг_неделя?.узб || 0);
+  // Безопасное получение данных
+  const ruData = group.ру || { людей: 0, взяли_тг: 0, тень: 0, мороз: 0, вылет: 0, всего: 0, процент: 0 };
+  const uzData = group.узб || { людей: 0, взяли_тг: 0, тень: 0, мороз: 0, вылет: 0, всего: 0, процент: 0 };
+  
+  // Закупки
+  const purchaseTodayRu = group.закупки_тг?.ру ?? 0;
+  const purchaseTodayUzb = group.закупки_тг?.узб ?? 0;
+  const purchaseWeekRu = group.закупки_тг_неделя?.ру ?? 0;
+  const purchaseWeekUzb = group.закупки_тг_неделя?.узб ?? 0;
+  const purchaseWeekTotal = purchaseWeekRu + purchaseWeekUzb;
 
   return (
     <div className={clsx('bg-dark-card border rounded-xl overflow-hidden stat-card', pc.border)}>
@@ -40,7 +47,7 @@ export default function GroupCard({ group, compact }: GroupCardProps) {
 
       {/* Stats Table */}
       <div className="p-2">
-        {/* Header */}
+        {/* Header Row */}
         <div className="grid grid-cols-7 gap-1 text-[10px] text-gray-500 uppercase px-1 mb-1">
           <span></span>
           <span className="text-center">Люди</span>
@@ -51,62 +58,69 @@ export default function GroupCard({ group, compact }: GroupCardProps) {
           <span className="text-center">%</span>
         </div>
 
-        {/* RU */}
+        {/* RU Row */}
         <div className="grid grid-cols-7 gap-1 items-center px-1 py-1">
           <span className="text-emerald-400 font-bold text-xs">RU</span>
-          <span className="text-center text-white text-sm">{group.ру?.людей || 0}</span>
-          <span className="text-center text-purple-300 text-sm">{group.ру?.тень || 0}</span>
-          <span className="text-center text-cyan-300 text-sm">{group.ру?.мороз || 0}</span>
-          <span className="text-center text-amber-300 text-sm">{group.ру?.вылет || 0}</span>
-          <span className="text-center text-white text-sm">{group.ру?.всего || 0}</span>
-          <span className={clsx('text-center text-xs font-bold', getPercentClass(group.ру?.процент || 0).text)}>
-            {group.ру?.процент || 0}%
+          <span className="text-center text-white text-sm">{ruData.людей}</span>
+          <span className="text-center text-purple-300 text-sm">{ruData.тень}</span>
+          <span className="text-center text-cyan-300 text-sm">{ruData.мороз}</span>
+          <span className="text-center text-amber-300 text-sm">{ruData.вылет}</span>
+          <span className="text-center text-white text-sm">{ruData.всего}</span>
+          <span className={clsx('text-center text-xs font-bold', getPercentClass(ruData.процент).text)}>
+            {ruData.процент}%
           </span>
         </div>
 
-        {/* UZB */}
+        {/* UZB Row */}
         <div className="grid grid-cols-7 gap-1 items-center px-1 py-1">
           <span className="text-pink-400 font-bold text-xs">UZ</span>
-          <span className="text-center text-white text-sm">{group.узб?.людей || 0}</span>
-          <span className="text-center text-purple-300 text-sm">{group.узб?.тень || 0}</span>
-          <span className="text-center text-cyan-300 text-sm">{group.узб?.мороз || 0}</span>
-          <span className="text-center text-amber-300 text-sm">{group.узб?.вылет || 0}</span>
-          <span className="text-center text-white text-sm">{group.узб?.всего || 0}</span>
-          <span className={clsx('text-center text-xs font-bold', getPercentClass(group.узб?.процент || 0).text)}>
-            {group.узб?.процент || 0}%
+          <span className="text-center text-white text-sm">{uzData.людей}</span>
+          <span className="text-center text-purple-300 text-sm">{uzData.тень}</span>
+          <span className="text-center text-cyan-300 text-sm">{uzData.мороз}</span>
+          <span className="text-center text-amber-300 text-sm">{uzData.вылет}</span>
+          <span className="text-center text-white text-sm">{uzData.всего}</span>
+          <span className={clsx('text-center text-xs font-bold', getPercentClass(uzData.процент).text)}>
+            {uzData.процент}%
           </span>
         </div>
 
-        {/* Total */}
+        {/* Total Row */}
         <div className="grid grid-cols-7 gap-1 items-center px-1 py-1 bg-dark-bg/50 rounded mt-1">
           <span className="text-blue-400 font-bold text-xs">Σ</span>
-          <span className="text-center text-white text-sm font-medium">{group.юзеров}</span>
-          <span className="text-center text-purple-300 text-sm font-medium">{group.тень}</span>
-          <span className="text-center text-cyan-300 text-sm font-medium">{group.мороз}</span>
-          <span className="text-center text-amber-300 text-sm font-medium">{group.вылет}</span>
-          <span className="text-center text-white text-sm font-bold">{group.всего_слётов}</span>
+          <span className="text-center text-white text-sm font-medium">{group.юзеров ?? 0}</span>
+          <span className="text-center text-purple-300 text-sm font-medium">{group.тень ?? 0}</span>
+          <span className="text-center text-cyan-300 text-sm font-medium">{group.мороз ?? 0}</span>
+          <span className="text-center text-amber-300 text-sm font-medium">{group.вылет ?? 0}</span>
+          <span className="text-center text-white text-sm font-bold">{group.всего_слётов ?? 0}</span>
           <span className={clsx('text-center text-xs font-bold px-1 rounded', pc.bg, pc.text)}>
-            {group.процент}%
+            {group.процент ?? 0}%
           </span>
         </div>
       </div>
 
-      {/* Purchases */}
-      <div className="border-t border-dark-border bg-dark-bg/20">
-        <div className="flex items-center justify-between px-3 py-2 text-xs">
-          <span className="text-emerald-400">📦 Сегодня</span>
-          <div className="flex gap-2">
-            <span className="text-emerald-300">ру {group.закупки_тг?.ру || 0}</span>
-            <span className="text-pink-300">уз {group.закупки_тг?.узб || 0}</span>
-          </div>
+      {/* Purchases - Today */}
+      <div className="border-t border-dark-border bg-dark-bg/20 px-3 py-2">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-emerald-400">📦 Закуплено сегодня</span>
+          <span className="text-white">
+            <span className="text-emerald-300">ру</span> {purchaseTodayRu}
+            <span className="text-gray-500 mx-1">|</span>
+            <span className="text-pink-300">уз</span> {purchaseTodayUzb}
+          </span>
         </div>
-        <div className="flex items-center justify-between px-3 py-2 text-xs border-t border-dark-border/50">
-          <span className="text-blue-400">📊 Неделя</span>
-          <div className="flex gap-2">
-            <span className="text-emerald-300">ру {group.закупки_тг_неделя?.ру || 0}</span>
-            <span className="text-pink-300">уз {group.закупки_тг_неделя?.узб || 0}</span>
-            <span className="text-white font-medium">{weekPurchases}</span>
-          </div>
+      </div>
+
+      {/* Purchases - Week */}
+      <div className="border-t border-dark-border/50 bg-dark-bg/10 px-3 py-2">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-blue-400">📊 За неделю</span>
+          <span className="text-white">
+            <span className="text-emerald-300">ру</span> {purchaseWeekRu}
+            <span className="text-gray-500 mx-1">|</span>
+            <span className="text-pink-300">уз</span> {purchaseWeekUzb}
+            <span className="text-gray-500 mx-1">|</span>
+            <span className="font-medium">{purchaseWeekTotal}</span>
+          </span>
         </div>
       </div>
     </div>

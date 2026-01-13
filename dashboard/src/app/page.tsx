@@ -12,7 +12,7 @@ import { fetchDashboard, clearCache } from '@/lib/api';
 import clsx from 'clsx';
 import { 
   Users, Target, Ghost, Snowflake, Plane, TrendingDown, RefreshCw, 
-  Calendar, Clock, Package, Heart, Loader2, AlertCircle
+  Calendar, Clock, Package, Heart, AlertCircle
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -44,26 +44,20 @@ export default function HomePage() {
   }, [loadData]);
 
   const handleRefresh = async () => {
-    try {
-      await clearCache();
-    } catch (e) {}
+    try { await clearCache(); } catch (e) {}
     await loadData();
   };
 
-  // Calculate totals
-  const purchasesToday = {
-    ру: data?.закупки_тг?.день?.ру || 0,
-    узб: data?.закупки_тг?.день?.узб || 0,
-  };
-  const purchasesWeek = {
-    ру: data?.закупки_тг?.неделя?.ру || 0,
-    узб: data?.закупки_тг?.неделя?.узб || 0,
-  };
-  const remaining = {
-    ру: data?.ру?.осталось || 0,
-    узб: data?.узб?.осталось || 0,
-    всего: data?.всего?.осталось || 0,
-  };
+  // Закупки - берём из data или ставим 0
+  const purchasesTodayRu = data?.закупки_тг?.день?.ру ?? 0;
+  const purchasesTodayUzb = data?.закупки_тг?.день?.узб ?? 0;
+  const purchasesWeekRu = data?.закупки_тг?.неделя?.ру ?? 0;
+  const purchasesWeekUzb = data?.закупки_тг?.неделя?.узб ?? 0;
+  
+  // Осталось ТГ
+  const remainingRu = data?.ру?.осталось ?? 0;
+  const remainingUzb = data?.узб?.осталось ?? 0;
+  const remainingTotal = data?.всего?.осталось ?? 0;
 
   return (
     <div className="min-h-screen bg-dark-bg">
@@ -71,7 +65,7 @@ export default function HomePage() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         status={{
-          online: !error,
+          online: !error && !!data,
           uptime: data?.метрики?.аптайм || '—',
           groups: data?.группы?.length || 14
         }}
@@ -96,16 +90,12 @@ export default function HomePage() {
                   <Calendar className="w-4 h-4" />
                   {data.дата} ({data.день})
                 </span>
-                {data.лист && (
-                  <span className="text-accent-purple">📋 {data.лист}</span>
-                )}
+                {data.лист && <span className="text-accent-purple">📋 {data.лист}</span>}
                 <span className="text-gray-500 flex items-center gap-1">
                   <Clock className="w-4 h-4" />
                   {lastUpdate?.toLocaleTimeString('ru-RU')}
                 </span>
-                {data.из_кеша && (
-                  <span className="text-amber-400 text-xs">из кэша</span>
-                )}
+                {data.из_кеша && <span className="text-amber-400 text-xs">из кэша</span>}
               </div>
             )}
           </div>
@@ -129,86 +119,94 @@ export default function HomePage() {
             <div className="space-y-6">
               {/* Stats Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                <StatCard title="Всего людей" value={data.всего.юзеров} icon={Users} color="blue" />
-                <StatCard title="Взяли ТГ" value={data.всего.взяли_тг} icon={Target} color="green" />
-                <StatCard title="Тень" value={data.всего.тень} icon={Ghost} color="purple" />
-                <StatCard title="Мороз" value={data.всего.мороз} icon={Snowflake} color="cyan" />
-                <StatCard title="Вылет" value={data.всего.вылет} icon={Plane} color="yellow" />
+                <StatCard title="Всего людей" value={data.всего?.юзеров ?? 0} icon={Users} color="blue" />
+                <StatCard title="Взяли ТГ" value={data.всего?.взяли_тг ?? 0} icon={Target} color="green" />
+                <StatCard title="Тень" value={data.всего?.тень ?? 0} icon={Ghost} color="purple" />
+                <StatCard title="Мороз" value={data.всего?.мороз ?? 0} icon={Snowflake} color="cyan" />
+                <StatCard title="Вылет" value={data.всего?.вылет ?? 0} icon={Plane} color="yellow" />
                 <StatCard 
                   title="% слётов" 
-                  value={`${data.всего.процент}%`} 
-                  subtitle={`Осталось: ${data.всего.осталось}`}
+                  value={`${data.всего?.процент ?? 0}%`} 
+                  subtitle={`Осталось: ${data.всего?.осталось ?? 0}`}
                   icon={TrendingDown} 
-                  color={data.всего.процент >= 50 ? 'red' : data.всего.процент >= 30 ? 'yellow' : 'green'} 
+                  color={(data.всего?.процент ?? 0) >= 50 ? 'red' : (data.всего?.процент ?? 0) >= 30 ? 'yellow' : 'green'} 
                 />
               </div>
 
               {/* Stats Table */}
               <StatsTable ру={data.ру} узб={data.узб} всего={data.всего} />
 
-              {/* Purchases & Remaining */}
+              {/* Purchases & Remaining - Как в старом дашборде */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* Today */}
+                {/* Закуплено сегодня */}
                 <div className="bg-dark-card border border-dark-border rounded-xl p-5">
                   <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
                     <Package className="w-5 h-5 text-amber-400" />
                     📦 Закуплено сегодня
                   </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
-                      <p className="text-emerald-400 text-3xl font-bold">{purchasesToday.ру}</p>
-                      <p className="text-emerald-300/70 text-sm">РУ</p>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-emerald-400 text-3xl font-bold">{purchasesTodayRu}</span>
+                        <span className="text-emerald-300/70 text-sm">РУ</span>
+                      </div>
                     </div>
-                    <div className="p-4 bg-pink-500/10 border border-pink-500/30 rounded-xl text-center">
-                      <p className="text-pink-400 text-3xl font-bold">{purchasesToday.узб}</p>
-                      <p className="text-pink-300/70 text-sm">УЗБ</p>
+                    <div className="flex-1 p-4 bg-pink-500/10 border border-pink-500/30 rounded-xl">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-pink-400 text-3xl font-bold">{purchasesTodayUzb}</span>
+                        <span className="text-pink-300/70 text-sm">УЗБ</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Week */}
+                {/* Закуплено за неделю */}
                 <div className="bg-dark-card border border-dark-border rounded-xl p-5">
                   <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
                     <Package className="w-5 h-5 text-blue-400" />
                     📊 Закуплено за неделю
                   </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
-                      <p className="text-emerald-400 text-3xl font-bold">{purchasesWeek.ру}</p>
-                      <p className="text-emerald-300/70 text-sm">РУ</p>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-emerald-400 text-3xl font-bold">{purchasesWeekRu}</span>
+                        <span className="text-emerald-300/70 text-sm">РУ</span>
+                      </div>
                     </div>
-                    <div className="p-4 bg-pink-500/10 border border-pink-500/30 rounded-xl text-center">
-                      <p className="text-pink-400 text-3xl font-bold">{purchasesWeek.узб}</p>
-                      <p className="text-pink-300/70 text-sm">УЗБ</p>
+                    <div className="flex-1 p-4 bg-pink-500/10 border border-pink-500/30 rounded-xl">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-pink-400 text-3xl font-bold">{purchasesWeekUzb}</span>
+                        <span className="text-pink-300/70 text-sm">УЗБ</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Remaining */}
+                {/* Осталось ТГ */}
                 <div className="bg-dark-card border border-accent-green/30 rounded-xl p-5">
                   <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
                     <Heart className="w-5 h-5 text-green-400" />
                     💚 Осталось ТГ
                   </h3>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
-                      <p className="text-emerald-400 text-2xl font-bold">{remaining.ру}</p>
-                      <p className="text-emerald-300/70 text-xs">РУ</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
+                      <div className="text-emerald-400 text-2xl font-bold">{remainingRu}</div>
+                      <div className="text-emerald-300/70 text-xs">РУ</div>
                     </div>
-                    <div className="p-3 bg-pink-500/10 border border-pink-500/30 rounded-xl text-center">
-                      <p className="text-pink-400 text-2xl font-bold">{remaining.узб}</p>
-                      <p className="text-pink-300/70 text-xs">УЗБ</p>
+                    <div className="flex-1 p-3 bg-pink-500/10 border border-pink-500/30 rounded-xl text-center">
+                      <div className="text-pink-400 text-2xl font-bold">{remainingUzb}</div>
+                      <div className="text-pink-300/70 text-xs">УЗБ</div>
                     </div>
-                    <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl text-center">
-                      <p className="text-blue-400 text-2xl font-bold">{remaining.всего}</p>
-                      <p className="text-blue-300/70 text-xs">ВСЕГО</p>
+                    <div className="flex-1 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl text-center">
+                      <div className="text-blue-400 text-2xl font-bold">{remainingTotal}</div>
+                      <div className="text-blue-300/70 text-xs">ВСЕГО</div>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Groups */}
-              {data.группы?.length > 0 && (
+              {data.группы && data.группы.length > 0 && (
                 <div>
                   <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
                     <Users className="w-5 h-5 text-accent-purple" />
@@ -238,9 +236,9 @@ export default function HomePage() {
         {activeTab === 'rooms' && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
             {ROOMS.map((room) => (
-              <div key={room.short} className="bg-dark-card border border-dark-border rounded-xl p-4 hover:border-accent-purple/50 transition-colors">
+              <div key={room.short} className="bg-dark-card border border-dark-border rounded-xl p-4 hover:border-accent-purple/50 transition-colors cursor-pointer">
                 <p className="font-semibold text-white">{room.name}</p>
-                <p className="text-xs text-gray-500">{room.short}</p>
+                <p className="text-xs text-gray-500 mt-1">{room.short}</p>
               </div>
             ))}
           </div>
@@ -270,14 +268,12 @@ export default function HomePage() {
                 />
                 <p className="text-xs text-gray-500 mt-1">Изменить в .env.local</p>
               </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleRefresh}
-                  className="px-4 py-2 bg-accent-purple text-white rounded-lg hover:bg-accent-purple/80 transition-colors"
-                >
-                  Очистить кэш
-                </button>
-              </div>
+              <button
+                onClick={handleRefresh}
+                className="px-4 py-2 bg-accent-purple text-white rounded-lg hover:bg-accent-purple/80 transition-colors"
+              >
+                Очистить кэш
+              </button>
             </div>
           </div>
         )}
@@ -287,9 +283,7 @@ export default function HomePage() {
 }
 
 // Stat Card Component
-function StatCard({ 
-  title, value, subtitle, icon: Icon, color 
-}: { 
+function StatCard({ title, value, subtitle, icon: Icon, color }: { 
   title: string; value: string | number; subtitle?: string; icon: any; color: string;
 }) {
   const colors: Record<string, string> = {
@@ -345,7 +339,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
   return (
     <div className="flex flex-col items-center justify-center py-20 bg-dark-card border border-dark-border rounded-xl">
       <AlertCircle className="w-16 h-16 text-red-400 mb-4" />
-      <p className="text-gray-400 mb-4">{message}</p>
+      <p className="text-gray-400 mb-4 text-center">{message}</p>
       <button onClick={onRetry} className="px-6 py-2 bg-accent-purple text-white rounded-lg hover:bg-accent-purple/80">
         Повторить
       </button>
