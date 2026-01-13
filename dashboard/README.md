@@ -1,68 +1,83 @@
-# Stats Bot Dashboard - Next.js
+# Stats Bot Dashboard v2.0
 
-Современная панель управления статистикой на React/Next.js.
+Современный дашборд для мониторинга статистики команд. Построен на Next.js 14, React 18 и TypeScript.
 
-## 🚀 Установка
+## Особенности
+
+- 🎨 Тёмная тема с красивым UI
+- 📊 Отображение статистики по группам
+- 👤 Личная статистика пользователей
+- 🎬 Просмотр записей (видео)
+- 🤖 Мониторинг статуса бота
+- ⚡ Быстрая загрузка с кэшированием
+
+## Технологии
+
+- **Next.js 14** — React фреймворк
+- **TypeScript** — типизация
+- **Tailwind CSS** — стилизация
+- **Lucide React** — иконки
+
+## Установка
 
 ```bash
-cd dashboard
+# Установить зависимости
 npm install
-```
 
-## ⚙️ Настройка
+# Скопировать конфигурацию
+cp .env.example .env.local
 
-Создайте `.env.local`:
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
-
-## 🏃 Запуск
-
-```bash
+# Запустить dev сервер
 npm run dev
 ```
 
-Откройте http://localhost:3000
-
-## 📁 Структура
+## Структура проекта
 
 ```
-dashboard/
-├── src/
-│   ├── app/
-│   │   ├── page.tsx      # Главная страница
-│   │   ├── layout.tsx    # Лейаут
-│   │   └── globals.css   # Стили
-│   ├── components/
-│   │   ├── Sidebar.tsx       # Навигация
-│   │   ├── StatsTable.tsx    # Сводная таблица
-│   │   ├── GroupCard.tsx     # Карточка группы
-│   │   ├── PersonalStats.tsx # Личная статистика
-│   │   ├── Recordings.tsx    # Видеозаписи
-│   │   └── BotStats.tsx      # Статистика бота
-│   ├── lib/
-│   │   └── api.ts        # API клиент
-│   └── types/
-│       └── index.ts      # TypeScript типы
-└── package.json
+src/
+├── app/                    # Next.js App Router
+│   ├── (dashboard)/        # Группа страниц дашборда
+│   │   ├── page.tsx        # Главная
+│   │   ├── groups/         # Группы
+│   │   ├── personal/       # Личная статистика
+│   │   ├── recordings/     # Записи
+│   │   ├── bot-stats/      # Статистика бота
+│   │   └── settings/       # Настройки
+│   ├── layout.tsx          # Корневой layout
+│   └── globals.css         # Глобальные стили
+├── components/
+│   ├── ui/                 # UI компоненты
+│   ├── layout/             # Layout компоненты
+│   └── dashboard/          # Компоненты дашборда
+├── lib/
+│   ├── api.ts              # API клиент
+│   └── utils.ts            # Утилиты
+└── types/
+    └── index.ts            # TypeScript типы
 ```
 
-## 🎨 Разделы
+## Переменные окружения
 
-1. **Дашборд** - общая статистика, группы, закупки ТГ
-2. **Комнаты** - список комнат
-3. **Группы** - детальная статистика по группам
-4. **Личная статистика** - статистика по пользователям
-5. **Записи** - видеозаписи работы
-6. **Статистика бота** - метрики и кэш
-7. **Настройки** - конфигурация
+| Переменная | Описание | По умолчанию |
+|------------|----------|--------------|
+| `NEXT_PUBLIC_API_URL` | URL бэкенда | `http://localhost:8000` |
 
-## 🔗 API
+## API endpoints
 
-Дашборд работает с FastAPI бэкендом:
-- `GET /api/dashboard` - основные данные
-- `GET /api/weekly-ranking` - рейтинг за неделю
-- `GET /api/personal-stats?group=` - личная статистика
-- `GET /api/recordings/team?group=` - записи команды
-- `GET /api/status` - статус бота
-- `POST /api/cache-clear` - очистка кэша
+Дашборд использует следующие API:
+
+- `GET /api/dashboard` — данные дашборда
+- `GET /api/weekly-ranking` — рейтинг за неделю
+- `GET /api/personal-stats?group=` — личная статистика
+- `GET /api/recordings/team?group=` — записи команды
+- `GET /api/status` — статус бота
+- `POST /api/cache-clear` — очистка кэша
+
+## Скрипты
+
+```bash
+npm run dev      # Разработка
+npm run build    # Продакшн билд
+npm run start    # Запуск продакшна
+npm run lint     # Проверка кода
+```

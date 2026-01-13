@@ -1,3 +1,81 @@
+// ============================================================================
+// ТИПЫ ДАННЫХ STATS BOT DASHBOARD
+// ============================================================================
+
+// --- Базовые типы статистики ---
+
+export interface StatsBlock {
+  людей: number;
+  взяли_тг: number;
+  тень: number;
+  мороз: number;
+  вылет: number;
+  всего: number;
+  процент: number;
+  осталось?: number;
+}
+
+export interface TotalStats {
+  юзеров: number;
+  взяли_тг: number;
+  тень: number;
+  мороз: number;
+  вылет: number;
+  всего_слётов: number;
+  процент: number;
+  осталось: number;
+}
+
+// --- Данные группы ---
+
+export interface GroupData {
+  имя: string;
+  юзеров: number;
+  взяли_тг: number;
+  тень: number;
+  мороз: number;
+  вылет: number;
+  всего_слётов: number;
+  процент: number;
+  статус: 'ok' | 'cached' | 'timeout' | 'error' | 'no_chat';
+  лист: string;
+  ру: StatsBlock;
+  узб: StatsBlock;
+  закупки_тг?: PurchaseData;
+  закупки_тг_неделя?: PurchaseData;
+}
+
+// --- Топ пользователи ---
+
+export interface TopUser {
+  имя: string;
+  группа: string;
+  тень: number;
+  мороз: number;
+  вылет: number;
+  всего: number;
+}
+
+// --- Метрики ---
+
+export interface Metrics {
+  аптайм: string;
+  обработано: number;
+  записано: number;
+  ошибок: number;
+  в_очереди: number;
+}
+
+// --- Закупки ---
+
+export interface PurchaseData {
+  ру: number;
+  узб: number;
+  всего?: number;
+}
+
+// --- Главный Dashboard ---
+
 export interface DashboardData {
   дата: string;
   день: string;
@@ -19,110 +97,69 @@ export interface DashboardData {
   из_кеша?: boolean;
 }
 
-export interface TotalStats {
-  юзеров: number;
-  взяли_тг: number;
-  тень: number;
-  мороз: number;
-  вылет: number;
-  всего_слётов: number;
-  процент: number;
-  осталось: number;
-}
-
-export interface StatsBlock {
-  людей: number;
-  взяли_тг: number;
-  тень: number;
-  мороз: number;
-  вылет: number;
-  всего: number;
-  процент: number;
-  осталось?: number;
-}
-
-export interface GroupData {
-  имя: string;
-  юзеров: number;
-  взяли_тг: number;
-  тень: number;
-  мороз: number;
-  вылет: number;
-  всего_слётов: number;
-  процент: number;
-  статус: string;
-  лист: string;
-  ру: StatsBlock;
-  узб: StatsBlock;
-  закупки_тг?: PurchaseData;
-  закупки_тг_неделя?: PurchaseData;
-}
-
-export interface TopUser {
-  имя: string;
-  группа: string;
-  тень: number;
-  мороз: number;
-  вылет: number;
-  всего: number;
-}
-
-export interface Metrics {
-  аптайм: string;
-  обработано: number;
-  записано: number;
-  ошибок: number;
-  в_очереди: number;
-}
-
-export interface PurchaseData {
-  ру: number;
-  узб: number;
-  всего?: number;
-}
+// --- Рейтинг за неделю ---
 
 export interface WeeklyRanking {
   лист: string;
-  дата: string;
+  период: string;
+  текущий_день: number;
   группы: RankingGroup[];
+  из_кеша?: boolean;
 }
 
 export interface RankingGroup {
   имя: string;
-  юзеры: RankingUser[];
+  ранг: number;
+  средний_процент: number;
+  дней_с_данными: number;
+  данные_дней: Record<string, { взяли_тг: number; слётов: number; процент: number }>;
+  закупки_тг: PurchaseData;
 }
 
-export interface RankingUser {
-  имя: string;
-  тень: number;
-  мороз: number;
-  вылет: number;
-  всего: number;
-}
+// --- Личная статистика ---
 
 export interface PersonalStats {
-  группа: string;
-  юзеры: PersonalUser[];
+  group: string;
+  sheet: string;
+  users_count: number;
+  users: PersonalUser[];
+  из_кеша?: boolean;
 }
 
 export interface PersonalUser {
-  имя: string;
-  строка: number;
-  данные: UserDayData[];
+  name: string;
+  row: number;
+  type: 'ру' | 'узб';
+  days: Record<string, DayStats>;
+  weekly: WeeklyUserStats;
 }
 
-export interface UserDayData {
-  день: string;
-  тень: number;
-  мороз: number;
-  вылет: number;
-  всего: number;
+export interface DayStats {
+  took: number;
+  shadow: number;
+  frost: number;
+  flight: number;
+  lost: number;
+  left: number;
 }
+
+export interface WeeklyUserStats {
+  took: number;
+  shadow: number;
+  frost: number;
+  flight: number;
+  lost: number;
+  left: number;
+  percent: number;
+}
+
+// --- Записи ---
 
 export interface RecordingsData {
   users: RecordingUser[];
   short: string;
   room_name: string;
+  is_mock?: boolean;
 }
 
 export interface RecordingUser {
@@ -156,18 +193,21 @@ export interface HourData {
   files?: { name: string; size_mb: number }[];
 }
 
+// --- Статус бота ---
+
 export interface BotStatus {
-  online: boolean;
-  uptime: string;
-  version: string;
-  groups_count: number;
-  cache: {
-    dashboard: { size: number; ttl: number };
-    ranking: { size: number; ttl: number };
+  статус: string;
+  аптайм: string;
+  сообщений_обработано: number;
+  сообщений_записано: number;
+  ошибок_за_час: number;
+  буфер?: {
+    размер: number;
+    групп: number;
   };
 }
 
-export type TabType = 'dashboard' | 'rooms' | 'groups' | 'personal' | 'recordings' | 'stats' | 'settings';
+// --- Константы ---
 
 export const ROOMS = [
   { name: 'ВИНН 1', short: 'vinn1' },
@@ -184,11 +224,13 @@ export const ROOMS = [
   { name: 'ЯРЫЙ', short: 'yaryj' },
   { name: 'ТК РЕКТОРАТ', short: 'tk_rekt' },
   { name: 'ГАЗОН', short: 'gazon' },
-];
+] as const;
 
-export const HOURS = Array.from({ length: 15 }, (_, i) => 8 + i);
+export const GROUP_NAMES = ROOMS.map(r => r.name);
 
-export const GROUP_NAMES = [
-  'ВИНН 1', 'ВИНН 2', 'БОРЦЫ', 'КИЕВ РЕКТОРАТ', 'ЗП 1', 'ЗП 2',
-  'АЗОВ 1', 'АЗОВ 2', 'ТОКИО', 'БЕРДЯНСК 1', 'БЕРДЯНСК 2', 'ЯРЫЙ', 'ТК РЕКТОРАТ', 'ГАЗОН'
-];
+export const HOURS = Array.from({ length: 15 }, (_, i) => 8 + i); // 8:00 - 22:00
+
+export const DAYS_OF_WEEK = [
+  'Понедельник', 'Вторник', 'Среда', 'Четверг', 
+  'Пятница', 'Суббота', 'Воскресенье'
+] as const;
