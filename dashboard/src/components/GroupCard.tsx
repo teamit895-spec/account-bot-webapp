@@ -1,101 +1,109 @@
 'use client';
 
-import { GroupData } from '@/types';
-import clsx from 'clsx';
+import { GroupData, cleanGroupName } from '@/types';
 
 interface GroupCardProps {
   group: GroupData;
-  onClick?: () => void;
 }
 
-export default function GroupCard({ group, onClick }: GroupCardProps) {
-  const getStatusColor = (percent: number) => {
-    if (percent >= 50) return 'border-red-500/50 bg-red-500/10';
-    if (percent >= 30) return 'border-amber-500/50 bg-amber-500/10';
-    return 'border-emerald-500/50 bg-emerald-500/10';
-  };
+function getStatusInfo(status: string): { className: string; badge: string; text: string } {
+  switch (status) {
+    case 'ok':
+      return { className: '', badge: 'badge-success', text: 'OK' };
+    case 'timeout':
+      return { className: 'status-warning', badge: 'badge-warning', text: 'Таймаут' };
+    case 'error':
+      return { className: 'status-error', badge: 'badge-error', text: 'Ошибка' };
+    case 'no_chat':
+      return { className: 'status-warning', badge: 'badge-warning', text: 'Нет чата' };
+    case 'cached':
+      return { className: 'status-cached', badge: 'badge-cached', text: 'Из кеша' };
+    default:
+      return { className: 'status-warning', badge: 'badge-warning', text: '—' };
+  }
+}
 
-  const getPercentColor = (percent: number) => {
-    if (percent >= 50) return 'text-red-400 bg-red-500/20';
-    if (percent >= 30) return 'text-amber-400 bg-amber-500/20';
-    return 'text-emerald-400 bg-emerald-500/20';
-  };
+export default function GroupCard({ group }: GroupCardProps) {
+  const statusInfo = getStatusInfo(group.статус);
+  const ру = group.ру || { людей: 0, взяли_тг: 0, тень: 0, мороз: 0, вылет: 0, всего: 0, процент: 0 };
+  const узб = group.узб || { людей: 0, взяли_тг: 0, тень: 0, мороз: 0, вылет: 0, всего: 0, процент: 0 };
+
+  const закупки_день = group.закупки_тг || { ру: 0, узб: 0 };
+  const закупки_неделя = group.закупки_тг_неделя || { ру: 0, узб: 0 };
+  const всего_день = (закупки_день.ру ?? 0) + (закупки_день.узб ?? 0);
+  const всего_неделя = (закупки_неделя.ру ?? 0) + (закупки_неделя.узб ?? 0);
 
   return (
-    <div
-      onClick={onClick}
-      className={clsx(
-        'relative overflow-hidden rounded-xl p-4 transition-all duration-300 cursor-pointer',
-        'bg-dark-card border hover:border-accent-purple/50 hover:shadow-lg hover:shadow-accent-purple/10',
-        'hover:translate-y-[-2px]',
-        getStatusColor(group.процент)
-      )}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-white truncate">{group.имя}</h3>
-        <span className={clsx(
-          'px-2 py-0.5 rounded text-xs font-bold',
-          getPercentColor(group.процент)
-        )}>
-          {group.процент}%
-        </span>
+    <div className={`group-card ${statusInfo.className}`}>
+      <div className="group-header">
+        <span className="group-name">{cleanGroupName(group.имя)}</span>
+        <span className={`badge ${statusInfo.badge}`}>{statusInfo.text}</span>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <div className="bg-dark-bg/50 rounded-lg p-2">
-          <p className="text-xs text-gray-500">Взяли ТГ</p>
-          <p className="text-lg font-bold text-white">{group.взяли_тг}</p>
-        </div>
-        <div className="bg-dark-bg/50 rounded-lg p-2">
-          <p className="text-xs text-gray-500">Слётов</p>
-          <p className="text-lg font-bold text-white">{group.всего_слётов}</p>
+      <table className="group-summary">
+        <thead>
+          <tr>
+            <th></th>
+            <th title="Людей в команде">Люди</th>
+            <th title="Взяли Telegram в работу">ТГ</th>
+            <th title="Тень - исчез">Тень</th>
+            <th title="Мороз - заморозили">Мороз</th>
+            <th title="Вылет - забанили">Вылет</th>
+            <th title="Всего слётов">Всего</th>
+            <th title="Процент слётов">%</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="ru">
+            <td>🇷🇺</td>
+            <td>{ру.людей ?? 0}</td>
+            <td>{ру.взяли_тг ?? 0}</td>
+            <td>{ру.тень ?? 0}</td>
+            <td>{ру.мороз ?? 0}</td>
+            <td>{ру.вылет ?? 0}</td>
+            <td>{ру.всего ?? 0}</td>
+            <td className="pct">{ру.процент ?? 0}%</td>
+          </tr>
+          <tr className="uzb">
+            <td>🇺🇿</td>
+            <td>{узб.людей ?? 0}</td>
+            <td>{узб.взяли_тг ?? 0}</td>
+            <td>{узб.тень ?? 0}</td>
+            <td>{узб.мороз ?? 0}</td>
+            <td>{узб.вылет ?? 0}</td>
+            <td>{узб.всего ?? 0}</td>
+            <td className="pct">{узб.процент ?? 0}%</td>
+          </tr>
+          <tr className="total">
+            <td>📊</td>
+            <td>{group.юзеров ?? 0}</td>
+            <td>{group.взяли_тг ?? 0}</td>
+            <td>{group.тень ?? 0}</td>
+            <td>{group.мороз ?? 0}</td>
+            <td>{group.вылет ?? 0}</td>
+            <td>{group.всего_слётов ?? 0}</td>
+            <td className="pct">{group.процент ?? 0}%</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div className="tg-purchase-row day">
+        <div className="purchase-label">📦 Загружено новых сегодня</div>
+        <div className="purchase-values">
+          <span className="purchase-ru">🇷🇺 {закупки_день.ру ?? 0}</span>
+          <span className="purchase-uzb">🇺🇿 {закупки_день.узб ?? 0}</span>
+          <span className="purchase-total">{всего_день}</span>
         </div>
       </div>
 
-      {/* Breakdown */}
-      <div className="flex items-center gap-3 text-xs">
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-purple-500" />
-          <span className="text-gray-400">Тень:</span>
-          <span className="text-white font-medium">{group.тень}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-cyan-500" />
-          <span className="text-gray-400">Мороз:</span>
-          <span className="text-white font-medium">{group.мороз}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-amber-500" />
-          <span className="text-gray-400">Вылет:</span>
-          <span className="text-white font-medium">{group.вылет}</span>
+      <div className="tg-purchase-row week">
+        <div className="purchase-label">📦 За неделю</div>
+        <div className="purchase-values">
+          <span className="purchase-ru">🇷🇺 {закупки_неделя.ру ?? 0}</span>
+          <span className="purchase-uzb">🇺🇿 {закупки_неделя.узб ?? 0}</span>
+          <span className="purchase-total">{всего_неделя}</span>
         </div>
       </div>
-
-      {/* Purchases */}
-      {group.закупки_тг && (group.закупки_тг.ру > 0 || group.закупки_тг.узб > 0) && (
-        <div className="mt-3 pt-3 border-t border-dark-border">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-emerald-400 font-medium">📦 Закуплено сегодня</span>
-            <div className="flex gap-2">
-              <span className="text-emerald-300">РУ: {group.закупки_тг.ру}</span>
-              <span className="text-pink-300">УЗБ: {group.закупки_тг.узб}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Status indicator */}
-      {group.статус !== 'ok' && (
-        <div className="absolute top-2 right-2">
-          <div className={clsx(
-            'w-2 h-2 rounded-full',
-            group.статус === 'cached' ? 'bg-purple-500' : 
-            group.статус === 'timeout' ? 'bg-amber-500' : 'bg-red-500'
-          )} />
-        </div>
-      )}
     </div>
   );
 }
