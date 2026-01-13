@@ -1,32 +1,24 @@
-import type { Config } from 'tailwindcss'
+import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        dark: {
-          bg: '#0a0a0f',
-          card: '#111118',
-          border: '#1e1e2e',
-          hover: '#1a1a28',
-        },
-        accent: {
-          purple: '#8b5cf6',
-          blue: '#3b82f6',
-          green: '#10b981',
-          yellow: '#f59e0b',
-          red: '#ef4444',
-          pink: '#ec4899',
-          cyan: '#06b6d4',
-        }
+        background: 'rgb(10 10 15)',
+        card: 'rgb(17 17 24)',
+        hover: 'rgb(26 26 40)',
+        border: 'rgb(30 30 46)',
+      },
+      gridTemplateColumns: {
+        '15': 'repeat(15, minmax(0, 1fr))',
       },
     },
   },
   plugins: [],
-}
-export default config
+};
+
+export default config;

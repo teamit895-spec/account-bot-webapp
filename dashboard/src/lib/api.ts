@@ -1,108 +1,105 @@
-import { DashboardData, WeeklyRanking, PersonalStats, RecordingsData, BotStatus } from '@/types';
+// ============================================================================
+// API КЛИЕНТ
+// ============================================================================
 
-const API_BASE = typeof window !== 'undefined' 
-  ? (process.env.NEXT_PUBLIC_API_URL || '') 
-  : '';
+import type { 
+  DashboardData, 
+  WeeklyRanking, 
+  PersonalStats, 
+  RecordingsData, 
+  BotStatus 
+} from '@/types';
 
-async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 30000) {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
+
+// --- Утилиты ---
+
+class ApiError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+async function fetchApi<T>(
+  endpoint: string, 
+  options: RequestInit = {}
+): Promise<T> {
+  const url = `${API_BASE}${endpoint}`;
   
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
   try {
     const response = await fetch(url, {
       ...options,
       signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+        ...options.headers,
+      },
+      cache: 'no-store',
     });
-    clearTimeout(id);
-    return response;
-  } catch (error) {
-    clearTimeout(id);
-    throw error;
+
+    if (!response.ok) {
+      throw new ApiError(response.status, `HTTP ${response.status}`);
+    }
+
+    return response.json();
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
+// --- API методы ---
+
 export async function fetchDashboard(date?: string): Promise<DashboardData> {
-  const url = date 
-    ? `${API_BASE}/api/dashboard?дата=${encodeURIComponent(date)}`
-    : `${API_BASE}/api/dashboard`;
-  
-  const response = await fetchWithTimeout(url, {
-    headers: { 'Accept': 'application/json' },
-    cache: 'no-store',
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch dashboard: ${response.status}`);
-  }
-  
-  return response.json();
+  const params = date ? `?дата=${encodeURIComponent(date)}` : '';
+  return fetchApi<DashboardData>(`/api/dashboard${params}`);
 }
 
 export async function fetchWeeklyRanking(): Promise<WeeklyRanking> {
-  const response = await fetchWithTimeout(`${API_BASE}/api/weekly-ranking`, {
-    headers: { 'Accept': 'application/json' },
-    cache: 'no-store',
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ranking: ${response.status}`);
-  }
-  
-  return response.json();
+  return fetchApi<WeeklyRanking>('/api/weekly-ranking');
 }
 
 export async function fetchPersonalStats(group: string): Promise<PersonalStats> {
-  const response = await fetchWithTimeout(
-    `${API_BASE}/api/personal-stats?group=${encodeURIComponent(group)}`,
-    {
-      headers: { 'Accept': 'application/json' },
-      cache: 'no-store',
-    }
+  return fetchApi<PersonalStats>(
+    `/api/personal-stats?group=${encodeURIComponent(group)}`
   );
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch personal stats: ${response.status}`);
-  }
-  
-  return response.json();
 }
 
 export async function fetchRecordings(teamShort: string): Promise<RecordingsData> {
-  const response = await fetchWithTimeout(
-    `${API_BASE}/api/recordings/team?group=${encodeURIComponent(teamShort)}`,
-    { cache: 'no-store' }
+  return fetchApi<RecordingsData>(
+    `/api/recordings/team?group=${encodeURIComponent(teamShort)}`
   );
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch recordings: ${response.status}`);
-  }
-  
-  return response.json();
 }
 
 export async function fetchBotStatus(): Promise<BotStatus> {
-  const response = await fetchWithTimeout(`${API_BASE}/api/status`, {
-    cache: 'no-store',
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch status: ${response.status}`);
-  }
-  
-  return response.json();
+  return fetchApi<BotStatus>('/api/status');
 }
 
 export async function clearCache(): Promise<void> {
-  await fetchWithTimeout(`${API_BASE}/api/cache-clear`, { 
-    method: 'POST',
-    cache: 'no-store',
-  });
+  await fetchApi('/api/cache-clear', { method: 'POST' });
 }
 
-export function getVideoStreamUrl(group: string, username: string, date: string, part: string): string {
-  return `${API_BASE}/api/recordings/stream-converted?group=${encodeURIComponent(group)}&username=${encodeURIComponent(username)}&date=${encodeURIComponent(date)}&part=${encodeURIComponent(part)}`;
+// --- URL генераторы для видео ---
+
+export function getVideoStreamUrl(
+  group: string, 
+  username: string, 
+  date: string, 
+  part: string
+): string {
+  const params = new URLSearchParams({ group, username, date, part });
+  return `${API_BASE}/api/recordings/stream-converted?${params}`;
 }
 
-export function getVideoDirectUrl(group: string, username: string, date: string, part: string): string {
-  return `${API_BASE}/api/recordings/video-url?group=${encodeURIComponent(group)}&username=${encodeURIComponent(username)}&date=${encodeURIComponent(date)}&part=${encodeURIComponent(part)}`;
+export function getVideoDirectUrl(
+  group: string, 
+  username: string, 
+  date: string, 
+  part: string
+): string {
+  const params = new URLSearchParams({ group, username, date, part });
+  return `${API_BASE}/api/recordings/video-url?${params}`;
 }
