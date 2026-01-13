@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { TabType } from '@/types';
 
 interface SidebarProps {
@@ -16,7 +17,7 @@ interface SidebarProps {
 
 const tabs: { key: TabType; label: string; icon: string }[] = [
   { key: 'dashboard', label: 'Дашборд', icon: '📊' },
-  { key: 'rooms', label: 'Статистика комнат', icon: '🏠' },
+  { key: 'rooms', label: 'Комнаты', icon: '🏠' },
   { key: 'groups', label: 'Группы', icon: '👥' },
   { key: 'personal', label: 'Личная статистика', icon: '👤' },
   { key: 'recordings', label: 'Записи работы', icon: '📹' },
@@ -31,6 +32,8 @@ export default function Sidebar({
   onClose,
   status
 }: SidebarProps) {
+  const [collapsed, setCollapsed] = useState(false);
+
   const handleTabClick = (tab: TabType) => {
     onTabChange(tab);
     onClose();
@@ -47,7 +50,10 @@ export default function Sidebar({
         <div className="sidebar-header">
           <div className="logo">
             <div className="logo-icon">📊</div>
-            <span>Статистика слётов</span>
+            <div className="logo-text">
+              <span className="logo-title">Stats Bot</span>
+              <span className="logo-sub">v2.0 Dashboard</span>
+            </div>
           </div>
         </div>
 
@@ -58,24 +64,32 @@ export default function Sidebar({
               className={`nav-item ${activeTab === key ? 'active' : ''}`}
               onClick={() => handleTabClick(key)}
             >
-              <span style={{ fontSize: '1.125rem' }}>{icon}</span> {label}
+              <span>{icon}</span>
+              <span>{label}</span>
             </button>
           ))}
         </nav>
 
+        <div className="sidebar-collapse">
+          <button className="collapse-btn" onClick={() => setCollapsed(!collapsed)}>
+            {collapsed ? '→' : '←'}
+          </button>
+        </div>
+
         <div className="status-box">
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <span className={`status-dot ${status.online ? 'online' : ''}`} />
             <span style={{
               fontWeight: 600,
+              fontSize: '0.75rem',
               color: status.online ? 'var(--success)' : 'var(--error)'
             }}>
-              {status.online ? 'Бот онлайн' : 'Бот офлайн'}
+              {status.online ? 'Онлайн' : 'Офлайн'}
             </span>
           </div>
           <div className="status-meta">
-            ⏱️ Аптайм: {status.uptime}<br />
-            📋 Групп: {status.groupsCount}
+            Аптайм: {status.uptime}<br />
+            Групп: {status.groupsCount}
           </div>
         </div>
       </aside>
