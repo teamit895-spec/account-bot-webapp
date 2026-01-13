@@ -58,22 +58,24 @@ export default function Sidebar({
               className={`nav-item ${activeTab === key ? 'active' : ''}`}
               onClick={() => handleTabClick(key)}
             >
-              {icon} {label}
+              <span style={{ fontSize: '1.125rem' }}>{icon}</span> {label}
             </button>
           ))}
         </nav>
 
         <div className="status-box">
-          <span className={`status-dot ${status.online ? 'online' : ''}`} />
-          <span style={{
-            fontWeight: 600,
-            color: status.online ? 'var(--success)' : 'var(--error)'
-          }}>
-            {status.online ? 'Онлайн' : 'Офлайн'}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+            <span className={`status-dot ${status.online ? 'online' : ''}`} />
+            <span style={{
+              fontWeight: 600,
+              color: status.online ? 'var(--success)' : 'var(--error)'
+            }}>
+              {status.online ? 'Бот онлайн' : 'Бот офлайн'}
+            </span>
+          </div>
           <div className="status-meta">
-            Аптайм: {status.uptime}<br />
-            Групп: {status.groupsCount}
+            ⏱️ Аптайм: {status.uptime}<br />
+            📋 Групп: {status.groupsCount}
           </div>
         </div>
       </aside>

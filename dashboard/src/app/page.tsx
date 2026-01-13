@@ -234,47 +234,61 @@ export default function Home() {
             >
               ☰
             </button>
-            <div className="date-info">
-              <div className="current-date">{displayDate}</div>
-              <div className="current-day">
+            <div>
+              <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+                {displayDate}
+                {!isToday && <span className="past-date-badge">АРХИВ</span>}
+              </h1>
+              <div className="header-subtitle" style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>
                 {displayDay}
-                {!isToday && ' (архив)'}
                 {data?.из_кеша && ' • из кеша'}
               </div>
             </div>
           </div>
 
           <div className="header-controls">
-            <button
-              className="date-nav-btn"
-              onClick={() => navigateDate('prev')}
-            >
-              ← Вчера
-            </button>
-            {!isToday && (
-              <button className="date-nav-btn" onClick={goToToday}>
-                Сегодня
+            <div className="date-nav" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-secondary)', padding: '6px 10px', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+              <button
+                className="date-nav-btn"
+                onClick={() => navigateDate('prev')}
+                style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-tertiary)', border: 'none', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '1rem', cursor: 'pointer' }}
+              >
+                ←
               </button>
-            )}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '100px', padding: '4px 8px' }}>
+                <span style={{ fontSize: '0.9375rem', fontWeight: 700 }}>{displayDate}</span>
+                <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{displayDay}</span>
+              </div>
+              <button
+                className="date-nav-btn"
+                onClick={() => navigateDate('next')}
+                disabled={isToday}
+                style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-tertiary)', border: 'none', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '1rem', cursor: 'pointer', opacity: isToday ? 0.5 : 1 }}
+              >
+                →
+              </button>
+              {!isToday && (
+                <button 
+                  onClick={goToToday}
+                  style={{ padding: '6px 12px', background: 'var(--accent)', border: 'none', borderRadius: '8px', color: 'white', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Сегодня
+                </button>
+              )}
+            </div>
             <button
-              className="date-nav-btn"
-              onClick={() => navigateDate('next')}
-              disabled={isToday}
-            >
-              Завтра →
-            </button>
-            <button
-              className="refresh-btn"
+              className="btn btn-primary"
               onClick={handleRefresh}
               disabled={refreshing}
             >
-              {refreshing ? <span className="spinner" style={{ width: 16, height: 16 }} /> : '🔄'}
-              Обновить
+              {refreshing ? <span className="spinner" /> : '🔄'} Обновить
             </button>
           </div>
         </header>
 
-        {renderContent()}
+        <div className="content">
+          {renderContent()}
+        </div>
       </main>
 
       {toast && (

@@ -87,6 +87,7 @@ export default function GroupCard({ group }: GroupCardProps) {
         </tbody>
       </table>
 
+      {/* Закупки ТГ - день */}
       <div className="tg-purchase-row day">
         <div className="purchase-label">📦 Загружено новых сегодня</div>
         <div className="purchase-values">
@@ -96,6 +97,7 @@ export default function GroupCard({ group }: GroupCardProps) {
         </div>
       </div>
 
+      {/* Закупки ТГ - неделя */}
       <div className="tg-purchase-row week">
         <div className="purchase-label">📦 За неделю</div>
         <div className="purchase-values">

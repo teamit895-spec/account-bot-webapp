@@ -22,8 +22,8 @@ export default function StatsTable({ data }: StatsTableProps) {
             <th>👤 Тень</th>
             <th>❄️ Мороз</th>
             <th>✈️ Вылет</th>
-            <th>Всего</th>
-            <th>%</th>
+            <th>📊 Всего</th>
+            <th>📈 %</th>
           </tr>
         </thead>
         <tbody>
@@ -60,13 +60,13 @@ export default function StatsTable({ data }: StatsTableProps) {
           <tr className="alive-row">
             <td>💚 Осталось ТГ</td>
             <td colSpan={2} style={{ textAlign: 'center' }}>
-              <span className="alive-cell">РУ: {ру.осталось ?? 0}</span>
+              <span className="alive-cell">🇷🇺 {ру.осталось !== undefined ? ру.осталось : (ру.взяли_тг - ру.всего)}</span>
             </td>
             <td colSpan={3} style={{ textAlign: 'center' }}>
-              <span className="alive-cell">УЗБ: {узб.осталось ?? 0}</span>
+              <span className="alive-cell">🇺🇿 {узб.осталось !== undefined ? узб.осталось : (узб.взяли_тг - узб.всего)}</span>
             </td>
             <td colSpan={2} style={{ textAlign: 'center' }}>
-              <span className="alive-cell">ВСЕГО: {всего.осталось ?? 0}</span>
+              <span className="alive-cell">📊 {всего.осталось !== undefined ? всего.осталось : (всего.взяли_тг - всего.всего_слётов)}</span>
             </td>
           </tr>
         </tbody>
