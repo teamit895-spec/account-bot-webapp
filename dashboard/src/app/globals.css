@@ -1111,6 +1111,199 @@ body {
     margin-bottom: 8px;
 }
 
+/* ==================== ROOMS TABLE ==================== */
+.rooms-table-container {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.rooms-table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.rooms-table-title {
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 14px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.filter-btn:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
+.filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.filter-btn.ru.active {
+    background: var(--ru-color);
+    border-color: var(--ru-color);
+    color: #000;
+}
+
+.filter-btn.uzb.active {
+    background: var(--uz-color);
+    border-color: var(--uz-color);
+    color: #000;
+}
+
+.filter-btn.total.active {
+    background: var(--total-color);
+    border-color: var(--total-color);
+    color: #000;
+}
+
+.rooms-table-scroll {
+    overflow-x: auto;
+}
+
+.rooms-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+}
+
+.rooms-table th,
+.rooms-table td {
+    padding: 10px 14px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.rooms-table th {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+}
+
+.rooms-table th:first-child,
+.rooms-table td:first-child {
+    text-align: left;
+    min-width: 140px;
+    position: sticky;
+    left: 0;
+    z-index: 5;
+}
+
+.rooms-table th:first-child {
+    background: var(--bg-tertiary);
+    z-index: 10;
+}
+
+.rooms-table td:first-child {
+    background: var(--bg-secondary);
+    font-weight: 600;
+    font-size: 0.8125rem;
+}
+
+.rooms-table tr:hover td {
+    filter: brightness(1.05);
+}
+
+.rooms-table tr.ru td {
+    background: var(--ru-bg);
+}
+
+.rooms-table tr.ru td:first-child {
+    background: rgba(74, 222, 128, 0.2);
+    color: var(--ru-color);
+    border-left: 3px solid var(--ru-color);
+}
+
+.rooms-table tr.ru .pct-badge {
+    background: var(--ru-color);
+    color: #000;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.rooms-table tr.uzb td {
+    background: var(--uz-bg);
+}
+
+.rooms-table tr.uzb td:first-child {
+    background: rgba(251, 191, 36, 0.2);
+    color: var(--uz-color);
+    border-left: 3px solid var(--uz-color);
+}
+
+.rooms-table tr.uzb .pct-badge {
+    background: var(--uz-color);
+    color: #000;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.rooms-table tr.total td {
+    background: var(--total-bg);
+}
+
+.rooms-table tr.total td:first-child {
+    background: rgba(96, 165, 250, 0.2);
+    color: var(--total-color);
+    border-left: 3px solid var(--total-color);
+}
+
+.rooms-table tr.total .pct-badge {
+    background: var(--total-color);
+    color: #000;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.rooms-table tr.section-header td {
+    background: var(--bg-tertiary) !important;
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    padding: 12px 14px;
+    text-align: left;
+}
+
+.rooms-table .val-zero {
+    color: var(--text-muted);
+}
+
 /* ==================== RECORDINGS PAGE ==================== */
 .recordings-page {
     display: flex;

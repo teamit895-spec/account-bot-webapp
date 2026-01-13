@@ -222,7 +222,7 @@ export interface Settings {
 }
 
 // ===== UI Types =====
-export type TabType = 'dashboard' | 'groups' | 'personal' | 'recordings' | 'stats' | 'settings';
+export type TabType = 'dashboard' | 'rooms' | 'groups' | 'personal' | 'recordings' | 'stats' | 'settings';
 export type RoomsFilter = 'all' | 'ru' | 'uzb' | 'total';
 export type PersonalTypeFilter = 'all' | 'ру' | 'узб';
 

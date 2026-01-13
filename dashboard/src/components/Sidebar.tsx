@@ -17,6 +17,7 @@ interface SidebarProps {
 
 const tabs: { key: TabType; label: string; icon: string }[] = [
   { key: 'dashboard', label: 'Дашборд', icon: '📊' },
+  { key: 'rooms', label: 'Комнаты', icon: '🏠' },
   { key: 'groups', label: 'Группы', icon: '👥' },
   { key: 'personal', label: 'Личная статистика', icon: '👤' },
   { key: 'recordings', label: 'Записи работы', icon: '📹' },
