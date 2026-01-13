@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 
 export const metadata: Metadata = {
-  title: 'Stats Dashboard | Статистика слётов',
-  description: 'Современная панель управления статистикой',
+  title: 'Stats Bot Dashboard | Статистика слётов',
+  description: 'Панель управления статистикой команд',
 }
 
 export default function RootLayout({

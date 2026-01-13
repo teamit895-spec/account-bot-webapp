@@ -2,82 +2,18 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Sidebar from '@/components/Sidebar';
-import StatCard from '@/components/StatCard';
+import StatsTable from '@/components/StatsTable';
 import GroupCard from '@/components/GroupCard';
-import SummaryTable from '@/components/SummaryTable';
-import { BarChartCard, DonutChart } from '@/components/Charts';
-import RecordingsPanel from '@/components/RecordingsPanel';
-import { LoadingSkeleton, ErrorState } from '@/components/LoadingState';
-import { DashboardData, TabType, GroupData } from '@/types';
+import PersonalStatsPanel from '@/components/PersonalStats';
+import RecordingsPanel from '@/components/Recordings';
+import BotStatsPanel from '@/components/BotStats';
+import { DashboardData, TabType, ROOMS } from '@/types';
 import { fetchDashboard, clearCache } from '@/lib/api';
-import { 
-  Users, 
-  Target, 
-  Ghost, 
-  Snowflake, 
-  Plane, 
-  TrendingDown,
-  RefreshCw,
-  Calendar,
-  Clock,
-  Package,
-  Heart
-} from 'lucide-react';
 import clsx from 'clsx';
-
-// Mock data for demo when API is not available
-const mockData: DashboardData = {
-  дата: new Date().toISOString().split('T')[0],
-  день: 'Понедельник',
-  время: new Date().toLocaleTimeString('ru-RU'),
-  это_сегодня: true,
-  лист: '13.01-19.01',
-  статус: 'ok',
-  всего: {
-    юзеров: 180,
-    взяли_тг: 156,
-    тень: 45,
-    мороз: 23,
-    вылет: 12,
-    всего_слётов: 80,
-    процент: 51,
-    осталось: 76
-  },
-  ру: {
-    людей: 90,
-    взяли_тг: 78,
-    тень: 22,
-    мороз: 11,
-    вылет: 6,
-    всего: 39,
-    процент: 50,
-    осталось: 39
-  },
-  узб: {
-    людей: 90,
-    взяли_тг: 78,
-    тень: 23,
-    мороз: 12,
-    вылет: 6,
-    всего: 41,
-    процент: 53,
-    осталось: 37
-  },
-  группы: [],
-  топ_юзеры: [],
-  топ_группы: [],
-  метрики: {
-    аптайм: '24ч 15м',
-    обработано: 1250,
-    записано: 980,
-    ошибок: 3,
-    в_очереди: 12
-  },
-  закупки_тг: {
-    день: { ру: 0, узб: 0 },
-    неделя: { ру: 1090, узб: 0 }
-  }
-};
+import { 
+  Users, Target, Ghost, Snowflake, Plane, TrendingDown, RefreshCw, 
+  Calendar, Clock, Package, Heart, Loader2, AlertCircle
+} from 'lucide-react';
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -93,10 +29,9 @@ export default function HomePage() {
       const result = await fetchDashboard();
       setData(result);
       setLastUpdate(new Date());
-    } catch (err) {
-      console.error('Failed to fetch data, using mock:', err);
-      setData(mockData);
-      setLastUpdate(new Date());
+    } catch (err: any) {
+      setError(err.message || 'Ошибка загрузки данных');
+      console.error('Dashboard error:', err);
     } finally {
       setLoading(false);
     }
@@ -108,34 +43,26 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, [loadData]);
 
-  const handleClearCache = async () => {
+  const handleRefresh = async () => {
     try {
       await clearCache();
-      await loadData();
-    } catch (err) {
-      console.error('Failed to clear cache:', err);
-    }
+    } catch (e) {}
+    await loadData();
   };
 
-  const chartData = data?.группы?.map(g => ({
-    name: g.имя,
-    тень: g.тень,
-    мороз: g.мороз,
-    вылет: g.вылет,
-    value: g.всего_слётов
-  })) || [];
-
-  const pieData = [
-    { name: 'Тень', value: data?.всего.тень || 0 },
-    { name: 'Мороз', value: data?.всего.мороз || 0 },
-    { name: 'Вылет', value: data?.всего.вылет || 0 },
-  ];
-
-  // Calculate remaining TG
-  const remainingTG = {
-    ру: (data?.ру?.осталось || 0),
-    узб: (data?.узб?.осталось || 0),
-    всего: (data?.всего?.осталось || 0)
+  // Calculate totals
+  const purchasesToday = {
+    ру: data?.закупки_тг?.день?.ру || 0,
+    узб: data?.закупки_тг?.день?.узб || 0,
+  };
+  const purchasesWeek = {
+    ру: data?.закупки_тг?.неделя?.ру || 0,
+    узб: data?.закупки_тг?.неделя?.узб || 0,
+  };
+  const remaining = {
+    ру: data?.ру?.осталось || 0,
+    узб: data?.узб?.осталось || 0,
+    всего: data?.всего?.осталось || 0,
   };
 
   return (
@@ -144,13 +71,12 @@ export default function HomePage() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         status={{
-          online: true,
+          online: !error,
           uptime: data?.метрики?.аптайм || '—',
           groups: data?.группы?.length || 14
         }}
       />
 
-      {/* Main content */}
       <main className="ml-64 min-h-screen p-6">
         {/* Header */}
         <header className="flex items-center justify-between mb-6">
@@ -160,42 +86,40 @@ export default function HomePage() {
               {activeTab === 'rooms' && 'Комнаты'}
               {activeTab === 'groups' && 'Группы'}
               {activeTab === 'personal' && 'Личная статистика'}
-              {activeTab === 'recordings' && 'Записи работы'}
-              {activeTab === 'stats' && 'Статистика'}
+              {activeTab === 'recordings' && 'Записи'}
+              {activeTab === 'stats' && 'Статистика бота'}
               {activeTab === 'settings' && 'Настройки'}
             </h1>
-            <div className="flex items-center gap-4 mt-1">
-              {data && (
-                <>
-                  <span className="text-gray-400 text-sm flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    {data.дата} ({data.день})
-                  </span>
-                  <span className="text-gray-500 text-sm flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    {lastUpdate?.toLocaleTimeString('ru-RU')}
-                  </span>
-                  {data.лист && (
-                    <span className="text-accent-purple text-sm">
-                      📋 {data.лист}
-                    </span>
-                  )}
-                </>
-              )}
-            </div>
+            {data && (
+              <div className="flex items-center gap-4 mt-1 text-sm">
+                <span className="text-gray-400 flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  {data.дата} ({data.день})
+                </span>
+                {data.лист && (
+                  <span className="text-accent-purple">📋 {data.лист}</span>
+                )}
+                <span className="text-gray-500 flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  {lastUpdate?.toLocaleTimeString('ru-RU')}
+                </span>
+                {data.из_кеша && (
+                  <span className="text-amber-400 text-xs">из кэша</span>
+                )}
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleClearCache}
-              className="px-4 py-2 bg-dark-card border border-dark-border rounded-lg hover:border-accent-purple/50 transition-colors flex items-center gap-2"
-            >
-              <RefreshCw className={clsx('w-4 h-4 text-gray-400', loading && 'animate-spin')} />
-              <span className="text-sm text-gray-400">Обновить кэш</span>
-            </button>
-          </div>
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            className="px-4 py-2 bg-dark-card border border-dark-border rounded-lg hover:border-accent-purple/50 transition-colors flex items-center gap-2"
+          >
+            <RefreshCw className={clsx('w-4 h-4 text-gray-400', loading && 'animate-spin')} />
+            <span className="text-sm text-gray-400">Обновить кэш</span>
+          </button>
         </header>
 
-        {/* Content */}
+        {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
           loading && !data ? (
             <LoadingSkeleton />
@@ -203,93 +127,64 @@ export default function HomePage() {
             <ErrorState message={error} onRetry={loadData} />
           ) : data ? (
             <div className="space-y-6">
-              {/* Stats cards */}
+              {/* Stats Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                <StatCard
-                  title="Всего людей"
-                  value={data.всего.юзеров}
-                  icon={<Users className="w-5 h-5" />}
-                  color="blue"
-                />
-                <StatCard
-                  title="Взяли ТГ"
-                  value={data.всего.взяли_тг}
-                  icon={<Target className="w-5 h-5" />}
-                  color="green"
-                />
-                <StatCard
-                  title="Тень"
-                  value={data.всего.тень}
-                  icon={<Ghost className="w-5 h-5" />}
-                  color="purple"
-                />
-                <StatCard
-                  title="Мороз"
-                  value={data.всего.мороз}
-                  icon={<Snowflake className="w-5 h-5" />}
-                  color="cyan"
-                />
-                <StatCard
-                  title="Вылет"
-                  value={data.всего.вылет}
-                  icon={<Plane className="w-5 h-5" />}
-                  color="yellow"
-                />
-                <StatCard
-                  title="% слётов"
-                  value={`${data.всего.процент}%`}
+                <StatCard title="Всего людей" value={data.всего.юзеров} icon={Users} color="blue" />
+                <StatCard title="Взяли ТГ" value={data.всего.взяли_тг} icon={Target} color="green" />
+                <StatCard title="Тень" value={data.всего.тень} icon={Ghost} color="purple" />
+                <StatCard title="Мороз" value={data.всего.мороз} icon={Snowflake} color="cyan" />
+                <StatCard title="Вылет" value={data.всего.вылет} icon={Plane} color="yellow" />
+                <StatCard 
+                  title="% слётов" 
+                  value={`${data.всего.процент}%`} 
                   subtitle={`Осталось: ${data.всего.осталось}`}
-                  icon={<TrendingDown className="w-5 h-5" />}
-                  color={data.всего.процент >= 50 ? 'red' : data.всего.процент >= 30 ? 'yellow' : 'green'}
+                  icon={TrendingDown} 
+                  color={data.всего.процент >= 50 ? 'red' : data.всего.процент >= 30 ? 'yellow' : 'green'} 
                 />
               </div>
 
-              {/* Summary table */}
-              <SummaryTable 
-                ру={data.ру} 
-                узб={data.узб} 
-                всего={data.всего} 
-              />
+              {/* Stats Table */}
+              <StatsTable ру={data.ру} узб={data.узб} всего={data.всего} />
 
-              {/* Purchases and Remaining TG - Combined Section */}
+              {/* Purchases & Remaining */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* Закуплено сегодня */}
+                {/* Today */}
                 <div className="bg-dark-card border border-dark-border rounded-xl p-5">
                   <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
                     <Package className="w-5 h-5 text-amber-400" />
-                    Закуплено сегодня
+                    📦 Закуплено сегодня
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
-                      <p className="text-emerald-400 text-3xl font-bold">{data.закупки_тг?.день?.ру || 0}</p>
-                      <p className="text-emerald-300/70 text-sm mt-1">РУ</p>
+                    <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
+                      <p className="text-emerald-400 text-3xl font-bold">{purchasesToday.ру}</p>
+                      <p className="text-emerald-300/70 text-sm">РУ</p>
                     </div>
-                    <div className="p-4 bg-pink-500/10 border border-pink-500/30 rounded-xl">
-                      <p className="text-pink-400 text-3xl font-bold">{data.закупки_тг?.день?.узб || 0}</p>
-                      <p className="text-pink-300/70 text-sm mt-1">УЗБ</p>
+                    <div className="p-4 bg-pink-500/10 border border-pink-500/30 rounded-xl text-center">
+                      <p className="text-pink-400 text-3xl font-bold">{purchasesToday.узб}</p>
+                      <p className="text-pink-300/70 text-sm">УЗБ</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Закуплено за неделю */}
+                {/* Week */}
                 <div className="bg-dark-card border border-dark-border rounded-xl p-5">
                   <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
                     <Package className="w-5 h-5 text-blue-400" />
-                    Закуплено за неделю
+                    📊 Закуплено за неделю
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
-                      <p className="text-emerald-400 text-3xl font-bold">{data.закупки_тг?.неделя?.ру || 0}</p>
-                      <p className="text-emerald-300/70 text-sm mt-1">РУ</p>
+                    <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
+                      <p className="text-emerald-400 text-3xl font-bold">{purchasesWeek.ру}</p>
+                      <p className="text-emerald-300/70 text-sm">РУ</p>
                     </div>
-                    <div className="p-4 bg-pink-500/10 border border-pink-500/30 rounded-xl">
-                      <p className="text-pink-400 text-3xl font-bold">{data.закупки_тг?.неделя?.узб || 0}</p>
-                      <p className="text-pink-300/70 text-sm mt-1">УЗБ</p>
+                    <div className="p-4 bg-pink-500/10 border border-pink-500/30 rounded-xl text-center">
+                      <p className="text-pink-400 text-3xl font-bold">{purchasesWeek.узб}</p>
+                      <p className="text-pink-300/70 text-sm">УЗБ</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Осталось ТГ */}
+                {/* Remaining */}
                 <div className="bg-dark-card border border-accent-green/30 rounded-xl p-5">
                   <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
                     <Heart className="w-5 h-5 text-green-400" />
@@ -297,41 +192,31 @@ export default function HomePage() {
                   </h3>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
-                      <p className="text-emerald-400 text-2xl font-bold">{remainingTG.ру}</p>
-                      <p className="text-emerald-300/70 text-xs mt-1">РУ</p>
+                      <p className="text-emerald-400 text-2xl font-bold">{remaining.ру}</p>
+                      <p className="text-emerald-300/70 text-xs">РУ</p>
                     </div>
                     <div className="p-3 bg-pink-500/10 border border-pink-500/30 rounded-xl text-center">
-                      <p className="text-pink-400 text-2xl font-bold">{remainingTG.узб}</p>
-                      <p className="text-pink-300/70 text-xs mt-1">УЗБ</p>
+                      <p className="text-pink-400 text-2xl font-bold">{remaining.узб}</p>
+                      <p className="text-pink-300/70 text-xs">УЗБ</p>
                     </div>
                     <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl text-center">
-                      <p className="text-blue-400 text-2xl font-bold">{remainingTG.всего}</p>
-                      <p className="text-blue-300/70 text-xs mt-1">ВСЕГО</p>
+                      <p className="text-blue-400 text-2xl font-bold">{remaining.всего}</p>
+                      <p className="text-blue-300/70 text-xs">ВСЕГО</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Charts row */}
-              {chartData.length > 0 && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2">
-                    <BarChartCard data={chartData} title="Слёты по группам" />
-                  </div>
-                  <DonutChart data={pieData} title="Распределение слётов" />
-                </div>
-              )}
-
               {/* Groups */}
-              {data.группы && data.группы.length > 0 && (
+              {data.группы?.length > 0 && (
                 <div>
                   <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
                     <Users className="w-5 h-5 text-accent-purple" />
                     Группы ({data.группы.length})
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {data.группы.map((group, index) => (
-                      <GroupCard key={index} group={group} />
+                    {data.группы.map((group, idx) => (
+                      <GroupCard key={idx} group={group} />
                     ))}
                   </div>
                 </div>
@@ -340,66 +225,130 @@ export default function HomePage() {
           ) : null
         )}
 
+        {/* Groups Tab */}
         {activeTab === 'groups' && data && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <p className="text-gray-400">Всего групп: {data.группы?.length || 0}</p>
-              <button
-                onClick={handleClearCache}
-                className="px-4 py-2 bg-accent-purple/20 text-accent-purple rounded-lg hover:bg-accent-purple/30 transition-colors"
-              >
-                Обновить
-              </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {data.группы?.map((group, index) => (
-                <GroupCard key={index} group={group} />
-              ))}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {data.группы?.map((group, idx) => (
+              <GroupCard key={idx} group={group} />
+            ))}
           </div>
         )}
 
-        {activeTab === 'recordings' && (
-          <RecordingsPanel />
+        {/* Rooms Tab */}
+        {activeTab === 'rooms' && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+            {ROOMS.map((room) => (
+              <div key={room.short} className="bg-dark-card border border-dark-border rounded-xl p-4 hover:border-accent-purple/50 transition-colors">
+                <p className="font-semibold text-white">{room.name}</p>
+                <p className="text-xs text-gray-500">{room.short}</p>
+              </div>
+            ))}
+          </div>
         )}
 
+        {/* Personal Stats Tab */}
+        {activeTab === 'personal' && <PersonalStatsPanel />}
+
+        {/* Recordings Tab */}
+        {activeTab === 'recordings' && <RecordingsPanel />}
+
+        {/* Bot Stats Tab */}
+        {activeTab === 'stats' && <BotStatsPanel metrics={data?.метрики} />}
+
+        {/* Settings Tab */}
         {activeTab === 'settings' && (
-          <div className="bg-dark-card border border-dark-border rounded-xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Настройки</h2>
+          <div className="bg-dark-card border border-dark-border rounded-xl p-6 max-w-2xl">
+            <h2 className="text-xl font-semibold text-white mb-6">Настройки</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">API URL</label>
                 <input
                   type="text"
-                  className="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-white focus:border-accent-purple outline-none"
-                  placeholder="http://localhost:8000"
+                  className="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-white focus:border-accent-purple outline-none"
                   defaultValue={process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}
+                  readOnly
                 />
+                <p className="text-xs text-gray-500 mt-1">Изменить в .env.local</p>
               </div>
               <div className="flex gap-3">
                 <button
-                  onClick={handleClearCache}
+                  onClick={handleRefresh}
                   className="px-4 py-2 bg-accent-purple text-white rounded-lg hover:bg-accent-purple/80 transition-colors"
                 >
                   Очистить кэш
-                </button>
-                <button
-                  onClick={loadData}
-                  className="px-4 py-2 bg-dark-hover border border-dark-border text-white rounded-lg hover:border-accent-purple/50 transition-colors"
-                >
-                  Обновить данные
                 </button>
               </div>
             </div>
           </div>
         )}
-
-        {(activeTab === 'rooms' || activeTab === 'personal' || activeTab === 'stats') && (
-          <div className="flex items-center justify-center h-64 bg-dark-card border border-dark-border rounded-xl">
-            <p className="text-gray-400">Раздел в разработке</p>
-          </div>
-        )}
       </main>
+    </div>
+  );
+}
+
+// Stat Card Component
+function StatCard({ 
+  title, value, subtitle, icon: Icon, color 
+}: { 
+  title: string; value: string | number; subtitle?: string; icon: any; color: string;
+}) {
+  const colors: Record<string, string> = {
+    blue: 'from-blue-500/20 to-blue-600/5 border-blue-500/30',
+    green: 'from-emerald-500/20 to-emerald-600/5 border-emerald-500/30',
+    purple: 'from-purple-500/20 to-purple-600/5 border-purple-500/30',
+    cyan: 'from-cyan-500/20 to-cyan-600/5 border-cyan-500/30',
+    yellow: 'from-amber-500/20 to-amber-600/5 border-amber-500/30',
+    red: 'from-red-500/20 to-red-600/5 border-red-500/30',
+  };
+  const iconColors: Record<string, string> = {
+    blue: 'text-blue-400', green: 'text-emerald-400', purple: 'text-purple-400',
+    cyan: 'text-cyan-400', yellow: 'text-amber-400', red: 'text-red-400',
+  };
+
+  return (
+    <div className={clsx('stat-card bg-gradient-to-br border rounded-xl p-4', colors[color])}>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">{title}</p>
+          <p className="text-2xl font-bold text-white">{value}</p>
+          {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
+        </div>
+        <div className={clsx('p-2 rounded-lg bg-white/5', iconColors[color])}>
+          <Icon className="w-5 h-5" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Loading Skeleton
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="h-24 bg-dark-card border border-dark-border rounded-xl animate-skeleton" />
+        ))}
+      </div>
+      <div className="h-48 bg-dark-card border border-dark-border rounded-xl animate-skeleton" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-40 bg-dark-card border border-dark-border rounded-xl animate-skeleton" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Error State
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 bg-dark-card border border-dark-border rounded-xl">
+      <AlertCircle className="w-16 h-16 text-red-400 mb-4" />
+      <p className="text-gray-400 mb-4">{message}</p>
+      <button onClick={onRetry} className="px-6 py-2 bg-accent-purple text-white rounded-lg hover:bg-accent-purple/80">
+        Повторить
+      </button>
     </div>
   );
 }

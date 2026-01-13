@@ -6,10 +6,9 @@
   --bg-primary: #0a0a0f;
   --bg-secondary: #111118;
   --bg-tertiary: #1a1a28;
-  --border-color: #1f1f2e;
+  --border-color: #1e1e2e;
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
-  --text-muted: #64748b;
   --accent: #8b5cf6;
 }
 
@@ -39,59 +38,82 @@
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-@layer utilities {
-  .glass {
-    background: rgba(17, 17, 24, 0.8);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-  }
-  
-  .gradient-border {
-    position: relative;
-  }
-  
-  .gradient-border::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    opacity: 0.5;
-  }
-
-  .stat-card {
-    @apply relative overflow-hidden rounded-xl p-4 transition-all duration-300;
-    background: linear-gradient(135deg, rgba(17, 17, 24, 0.9), rgba(26, 26, 40, 0.8));
-    border: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  .stat-card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(139, 92, 246, 0.3);
-    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.15);
-  }
-
-  .glow-text {
-    text-shadow: 0 0 10px currentColor;
-  }
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px currentColor; }
+  50% { box-shadow: 0 0 20px currentColor; }
 }
 
-/* Chart tooltip styles */
-.recharts-tooltip-wrapper {
-  outline: none !important;
+@keyframes skeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
-.custom-tooltip {
-  background: rgba(17, 17, 24, 0.95) !important;
-  border: 1px solid rgba(139, 92, 246, 0.3) !important;
-  border-radius: 8px !important;
-  padding: 12px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+.animate-skeleton {
+  background: linear-gradient(90deg, #1a1a28 25%, #252535 50%, #1a1a28 75%);
+  background-size: 200% 100%;
+  animation: skeleton 1.5s infinite;
 }
+
+/* Glass effect */
+.glass {
+  background: rgba(17, 17, 24, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Stat card hover */
+.stat-card {
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.15);
+}
+
+/* Table styles */
+.stats-table th {
+  background: rgba(139, 92, 246, 0.1);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.stats-table tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Video player */
+.video-container {
+  position: relative;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.video-container video {
+  width: 100%;
+  height: auto;
+  max-height: 80vh;
+}
+
+/* Status indicators */
+.status-online {
+  animation: pulse-glow 2s ease-in-out infinite;
+  color: #10b981;
+}
+
+.status-offline {
+  color: #ef4444;
+}
+
+/* Percent colors */
+.percent-good { color: #10b981; }
+.percent-warning { color: #f59e0b; }
+.percent-danger { color: #ef4444; }
+
+.bg-percent-good { background: rgba(16, 185, 129, 0.2); }
+.bg-percent-warning { background: rgba(245, 158, 11, 0.2); }
+.bg-percent-danger { background: rgba(239, 68, 68, 0.2); }

@@ -12,7 +12,7 @@ const config: Config = {
         dark: {
           bg: '#0a0a0f',
           card: '#111118',
-          border: '#1f1f2e',
+          border: '#1e1e2e',
           hover: '#1a1a28',
         },
         accent: {
@@ -25,16 +25,6 @@ const config: Config = {
           cyan: '#06b6d4',
         }
       },
-      animation: {
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'glow': 'glow 2s ease-in-out infinite alternate',
-      },
-      keyframes: {
-        glow: {
-          '0%': { boxShadow: '0 0 5px rgba(139, 92, 246, 0.5)' },
-          '100%': { boxShadow: '0 0 20px rgba(139, 92, 246, 0.8)' },
-        }
-      }
     },
   },
   plugins: [],
