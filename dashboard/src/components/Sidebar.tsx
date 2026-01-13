@@ -17,11 +17,10 @@ interface SidebarProps {
 
 const tabs: { key: TabType; label: string; icon: string }[] = [
   { key: 'dashboard', label: 'Дашборд', icon: '📊' },
-  { key: 'rooms', label: 'Комнаты', icon: '🏠' },
   { key: 'groups', label: 'Группы', icon: '👥' },
   { key: 'personal', label: 'Личная статистика', icon: '👤' },
-  { key: 'recordings', label: 'Записи', icon: '📹' },
-  { key: 'stats', label: 'Статистика бота', icon: '📈' },
+  { key: 'recordings', label: 'Записи работы', icon: '📹' },
+  { key: 'stats', label: 'Статистика', icon: '📈' },
   { key: 'settings', label: 'Настройки', icon: '⚙️' },
 ];
 

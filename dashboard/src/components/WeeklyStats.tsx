@@ -32,57 +32,58 @@ export default function WeeklyStatsView({ groups, onRefreshCache, refreshing }: 
   }, []);
 
   const getPercentClass = (pct: number) => {
-    if (pct <= 3) return 'excellent';
-    if (pct <= 5) return 'good';
-    if (pct <= 7) return 'warning';
+    if (pct <= 12) return 'good';
+    if (pct <= 20) return 'warning';
     return 'bad';
   };
 
+  const medals = ['🥇', '🥈', '🥉'];
   const getMedal = (rank: number) => {
-    if (rank === 1) return '🏆';
-    if (rank === 2) return '🥈';
-    if (rank === 3) return '🥉';
-    return null;
+    return rank <= 3 ? medals[rank - 1] : null;
+  };
+  
+  const getRankClass = (rank: number) => {
+    if (rank === 1) return 'gold';
+    if (rank === 2) return 'silver';
+    if (rank === 3) return 'bronze';
+    return '';
   };
 
   const filteredGroups = (weeklyData?.группы || [])
-    .filter(гр => гр.дней_с_данными > 0)
+    .filter(гр => гр.дней_с_данными > 0 && гр.средний_процент >= 0.1)
     .sort((a, b) => a.средний_процент - b.средний_процент);
-
-  const maxPercent = Math.max(...filteredGroups.map(g => g.средний_процент), 10);
 
   return (
     <div className="groups-page">
       {/* Weekly Stats Table */}
-      <div className="weekly-container">
-        <div className="weekly-header">
-          <div className="weekly-title">
-            <span className="weekly-icon">📊</span>
-            Средний % вылетов за неделю
+      <div className="weekly-stats-container">
+        <div className="weekly-stats-header">
+          <div className="weekly-stats-title">
+            <span>📊</span> Средний % вылетов за неделю
           </div>
           {weeklyData?.период && (
-            <div className="weekly-period">{weeklyData.период}</div>
+            <div className="weekly-stats-period">{weeklyData.период}</div>
           )}
         </div>
 
         {loading ? (
           <div className="weekly-loading">
-            <div className="loading-spinner" />
-            <p>Загрузка статистики...</p>
+            <div className="spinner" />
+            <p style={{ marginTop: '10px' }}>Загрузка статистики...</p>
           </div>
         ) : filteredGroups.length === 0 ? (
-          <div className="weekly-empty">
+          <div className="weekly-loading">
             <p>🔭 Нет данных за эту неделю</p>
           </div>
         ) : (
-          <table className="weekly-table-v2">
+          <table className="weekly-table">
             <thead>
               <tr>
                 <th style={{ width: '50px' }}>#</th>
-                <th>ГРУППА</th>
-                <th style={{ width: '100px', textAlign: 'right' }}>СРЕДНИЙ %</th>
-                <th style={{ width: '200px' }}>ПРОГРЕСС</th>
-                <th style={{ width: '80px', textAlign: 'right' }}>ДНЕЙ</th>
+                <th>Группа</th>
+                <th style={{ width: '100px' }}>Средний %</th>
+                <th style={{ width: '140px' }}>Прогресс</th>
+                <th style={{ width: '80px' }}>Дней</th>
               </tr>
             </thead>
             <tbody>
@@ -90,33 +91,33 @@ export default function WeeklyStatsView({ groups, onRefreshCache, refreshing }: 
                 const rank = idx + 1;
                 const medal = getMedal(rank);
                 const pctClass = getPercentClass(group.средний_процент);
-                const barWidth = (group.средний_процент / maxPercent) * 100;
+                const rankClass = getRankClass(rank);
+                const barWidth = Math.min(100, (group.средний_процент / 30) * 100);
 
                 return (
                   <tr key={group.имя}>
                     <td>
-                      <div className={`rank-badge ${rank <= 3 ? `rank-${rank}` : ''}`}>
-                        {medal || rank}
+                      <div className={`weekly-rank ${rankClass}`}>
+                        {rank}
                       </div>
                     </td>
-                    <td className="group-name-cell">
-                      {medal && <span className="medal-icon">{medal}</span>}
-                      {cleanGroupName(group.имя)}
+                    <td className="weekly-name">
+                      {medal ? `${medal} ` : ''}{cleanGroupName(group.имя)}
                     </td>
-                    <td className="percent-cell">
-                      <span className={`percent-value ${pctClass}`}>
-                        {group.средний_процент.toFixed(2)}%
+                    <td>
+                      <span className={`weekly-percent ${pctClass}`}>
+                        {group.средний_процент}%
                       </span>
                     </td>
                     <td>
-                      <div className="progress-bar-container">
+                      <div className="weekly-bar">
                         <div 
-                          className={`progress-bar-fill ${pctClass}`}
-                          style={{ width: `${Math.min(barWidth, 100)}%` }}
+                          className={`weekly-bar-fill ${pctClass}`}
+                          style={{ width: `${barWidth}%` }}
                         />
                       </div>
                     </td>
-                    <td className="days-cell">
+                    <td className="weekly-days">
                       {group.дней_с_данными} из {weeklyData?.текущий_день || 7}
                     </td>
                   </tr>
@@ -128,21 +129,19 @@ export default function WeeklyStatsView({ groups, onRefreshCache, refreshing }: 
       </div>
 
       {/* All Groups Section */}
-      <div className="all-groups-section">
-        <div className="all-groups-header">
-          <div className="all-groups-title">
-            <span>👥</span> Все группы
-          </div>
-          <div className="all-groups-actions">
+      <div className="section">
+        <div className="section-header">
+          <h2 className="section-title">📋 Все группы</h2>
+          <div style={{ display: 'flex', gap: '10px' }}>
             <button 
-              className="action-btn" 
+              className="btn" 
               onClick={() => loadWeeklyData(true)} 
               disabled={loading}
             >
-              {loading ? <span className="spinner" /> : '📊'} Обновить рейтинг
+              {loading ? <span className="spinner" /> : '🔄'} Обновить рейтинг
             </button>
             <button 
-              className="action-btn primary" 
+              className="btn btn-primary" 
               onClick={onRefreshCache} 
               disabled={refreshing}
             >
@@ -150,8 +149,10 @@ export default function WeeklyStatsView({ groups, onRefreshCache, refreshing }: 
             </button>
           </div>
         </div>
-        <div className="groups-grid-v2">
-          {groups.map(gr => <GroupCard key={gr.имя} group={gr} />)}
+        <div className="section-content">
+          <div className="groups-grid">
+            {groups.map(gr => <GroupCard key={gr.имя} group={gr} />)}
+          </div>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { PersonalStatsResponse, PersonalUser, GroupData, cleanGroupName, PersonalTypeFilter, DAYS_SHORT, ROOMS } from '@/types';
+import { PersonalStatsResponse, PersonalUser, GroupData, cleanGroupName, PersonalTypeFilter, DAYS_SHORT } from '@/types';
 import { fetchPersonalStats } from '@/lib/api';
 
 interface PersonalStatsProps {
@@ -43,10 +43,11 @@ export default function PersonalStats({ groups }: PersonalStatsProps) {
     });
   };
 
-  // Get teams from ROOMS constant
-  const teams = ROOMS.map(room => ({
-    name: room.name,
-    short: room.short
+  // Get teams from groups data (like old dashboard)
+  const teams = groups.map(gr => ({
+    name: gr.имя,
+    cleanName: cleanGroupName(gr.имя),
+    count: gr.юзеров || 0
   }));
 
   let filteredUsers = data?.users || [];
@@ -65,14 +66,15 @@ export default function PersonalStats({ groups }: PersonalStatsProps) {
   return (
     <div className="personal-page">
       {/* Team Buttons */}
-      <div className="team-buttons-grid">
+      <div className="team-buttons">
         {teams.map(t => (
           <button
-            key={t.short}
-            className={`team-btn-v2 ${selectedTeam === t.name ? 'active' : ''}`}
+            key={t.name}
+            className={`team-btn ${selectedTeam === t.name ? 'active' : ''}`}
             onClick={() => loadPersonalStats(t.name)}
           >
-            {t.name}
+            {t.cleanName}
+            <span className="team-count">{t.count}</span>
           </button>
         ))}
       </div>

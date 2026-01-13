@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   DashboardData,
   TabType,
-  RoomsFilter,
   cleanGroupName
 } from '@/types';
 import {
@@ -18,7 +17,6 @@ import {
 import Sidebar from '@/components/Sidebar';
 import StatsTable from '@/components/StatsTable';
 import GroupCard from '@/components/GroupCard';
-import RoomsTable from '@/components/RoomsTable';
 import WeeklyStats from '@/components/WeeklyStats';
 import PersonalStats from '@/components/PersonalStats';
 import Recordings from '@/components/Recordings';
@@ -34,7 +32,6 @@ export default function Home() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [clearing, setClearing] = useState(false);
-  const [roomsFilter, setRoomsFilter] = useState<RoomsFilter>('all');
 
   const [botStatus, setBotStatus] = useState({
     online: false,
@@ -150,15 +147,6 @@ export default function Home() {
     switch (activeTab) {
       case 'dashboard':
         return <DashboardTab data={data} />;
-      case 'rooms':
-        return (
-          <RoomsTable
-            data={data}
-            groups={data.группы || []}
-            filter={roomsFilter}
-            onFilterChange={setRoomsFilter}
-          />
-        );
       case 'groups':
         return (
           <WeeklyStats
