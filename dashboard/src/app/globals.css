@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #111118;
+  --bg-tertiary: #1a1a28;
+  --border-color: #1f1f2e;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent: #8b5cf6;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2d2d3d #111118;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #111118;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #2d2d3d;
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #3d3d4d;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+@layer utilities {
+  .glass {
+    background: rgba(17, 17, 24, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .gradient-border {
+    position: relative;
+  }
+  
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.5;
+  }
+
+  .stat-card {
+    @apply relative overflow-hidden rounded-xl p-4 transition-all duration-300;
+    background: linear-gradient(135deg, rgba(17, 17, 24, 0.9), rgba(26, 26, 40, 0.8));
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .stat-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(139, 92, 246, 0.3);
+    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.15);
+  }
+
+  .glow-text {
+    text-shadow: 0 0 10px currentColor;
+  }
+}
+
+/* Chart tooltip styles */
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
+
+.custom-tooltip {
+  background: rgba(17, 17, 24, 0.95) !important;
+  border: 1px solid rgba(139, 92, 246, 0.3) !important;
+  border-radius: 8px !important;
+  padding: 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
